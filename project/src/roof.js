@@ -136,6 +136,53 @@ function createRoofBufferInfo(gl) {
   });
 }
 
+function initRoof(gl) {
+  chapelRoofBufferInfo = createRoofBufferInfo(gl);
+}
+
+function drawRoof(view, projection, cameraPosition, lightDirection) {
+  if (!chapelRoofBufferInfo) return;
+
+  let world = m4.identity();
+  world = m4.translate(world, 0, ROOF.worldY, 0);
+
+  const worldInverseTranspose = m4.transpose(m4.inverse(world));
+  const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
+  const effectiveLightIntensity = state.lightEnabled ? state.lightIntensity : 0.0;
+
+  gl.disable(gl.CULL_FACE);
+
+  gl.useProgram(programInfo.program);
+  webglUtils.setBuffersAndAttributes(gl, programInfo, chapelRoofBufferInfo);
+
+  webglUtils.setUniforms(programInfo, {
+    u_world: world,
+    u_view: view,
+    u_projection: projection,
+    u_worldInverseTranspose: worldInverseTranspose,
+    u_lightDirection: lightDirection,
+    u_viewWorldPosition: cameraPosition,
+    u_colorMult: ROOF.color,
+    u_texture: window.wallTexture,
+    u_ambient: effectiveAmbient,
+    u_lightIntensity: effectiveLightIntensity,
+  });
+
+  webglUtils.drawBufferInfo(gl, chapelRoofBufferInfo);
+
+  gl.enable(gl.CULL_FACE);
+}
+
+function initCircularWall(gl) {
+  circularWallBufferInfo = createCircularWallBufferInfo(
+    gl,
+    CIRCULAR_WALL.outerRadius,
+    CIRCULAR_WALL.innerRadius,
+    CIRCULAR_WALL.thickness,
+    64
+  );
+}
+
 function createCircularWallBufferInfo(gl, outerR, innerR, thickness, arcSteps = 64) {
   const positions = [];
   const normals = [];
@@ -223,53 +270,6 @@ function createCircularWallBufferInfo(gl, outerR, innerR, thickness, arcSteps = 
     normal:   { numComponents: 3, data: new Float32Array(normals) },
     texcoord: { numComponents: 2, data: new Float32Array(texcoords) },
   });
-}
-
-function initRoof(gl) {
-  chapelRoofBufferInfo = createRoofBufferInfo(gl);
-}
-
-function initCircularWall(gl) {
-  circularWallBufferInfo = createCircularWallBufferInfo(
-    gl,
-    CIRCULAR_WALL.outerRadius,
-    CIRCULAR_WALL.innerRadius,
-    CIRCULAR_WALL.thickness,
-    64
-  );
-}
-
-function drawRoof(view, projection, cameraPosition, lightDirection) {
-  if (!chapelRoofBufferInfo) return;
-
-  let world = m4.identity();
-  world = m4.translate(world, 0, ROOF.worldY, 0);
-
-  const worldInverseTranspose = m4.transpose(m4.inverse(world));
-  const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
-  const effectiveLightIntensity = state.lightEnabled ? state.lightIntensity : 0.0;
-
-  gl.disable(gl.CULL_FACE);
-
-  gl.useProgram(programInfo.program);
-  webglUtils.setBuffersAndAttributes(gl, programInfo, chapelRoofBufferInfo);
-
-  webglUtils.setUniforms(programInfo, {
-    u_world: world,
-    u_view: view,
-    u_projection: projection,
-    u_worldInverseTranspose: worldInverseTranspose,
-    u_lightDirection: lightDirection,
-    u_viewWorldPosition: cameraPosition,
-    u_colorMult: ROOF.color,
-    u_texture: window.wallTexture,
-    u_ambient: effectiveAmbient,
-    u_lightIntensity: effectiveLightIntensity,
-  });
-
-  webglUtils.drawBufferInfo(gl, chapelRoofBufferInfo);
-
-  gl.enable(gl.CULL_FACE);
 }
 
 function drawCircularWall(view, projection, cameraPosition, lightDirection) {
