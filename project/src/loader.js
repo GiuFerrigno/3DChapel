@@ -1,5 +1,6 @@
 "use strict";
 
+// Non usato al momento 
 const OBJ_PATHS = {
   mainAltar: "../models/altar2.obj",
 };
@@ -11,6 +12,8 @@ const TEXTURE_PATHS = {
   wood: "../textures/wood.jpg",
   column: "../textures/column.jpg",
   stainedGlass: "../models/stained-glass.png",
+  circularStainedGlass: "../models/circular-glass.png",
+  simpleGlass: "../models/stained-glass-simple.png", 
 };
 
 const TEXTURE_DEFAULTS = {
@@ -82,6 +85,8 @@ async function loadSceneTextures(gl) {
   window.woodTexture = loadTexturePOT(gl, TEXTURE_PATHS.wood, TEXTURE_DEFAULTS.potSize);
   window.columnTexture = loadTexturePOT(gl, TEXTURE_PATHS.column, TEXTURE_DEFAULTS.potSize);
   window.windowTexture = loadTexturePOT(gl, TEXTURE_PATHS.stainedGlass, TEXTURE_DEFAULTS.potSize);
+  window.circularWindowTexture = loadTexturePOT(gl, TEXTURE_PATHS.circularStainedGlass, TEXTURE_DEFAULTS.potSize);
+  window.simpleWindowTexture = loadTexturePOT(gl, TEXTURE_PATHS.simpleGlass, TEXTURE_DEFAULTS.potSize);
 
   window.meshTexture = window.wallTexture;
 }

@@ -3,14 +3,6 @@
 let chapelBoxBufferInfo = null;
 let chapelParts = [];
 
-async function initSceneGeometry(gl) {
-  chapelBoxBufferInfo = createBoxBufferInfo(gl);
-  chapelParts = buildChapelParts();
-
-  await loadWindowMesh(gl);
-  initRoof(gl);
-}
-
 function getPartWorld(part) {
   let world = m4.identity();
   world = m4.translate(world, part.t[0], part.t[1], part.t[2]);
@@ -51,11 +43,86 @@ function drawPart(part, view, projection, cameraPosition, lightDirection) {
   webglUtils.drawBufferInfo(gl, chapelBoxBufferInfo);
 }
 
+async function initSceneGeometry(gl) {
+  chapelBoxBufferInfo = createBoxBufferInfo(gl);
+  chapelParts = buildChapelParts();
+  initRoof(gl);
+  initCircularWall(gl);
+
+  // Assegnamento dei parametri iniziali delle finestre
+  state.windows = [
+    {
+      objPath: "../models/flatWindow.obj",
+      texture: window.windowTexture,
+      position: [0, 3.1, -6.98],
+      scale: [1.8, 1.8, 1.5],
+      color: [1.0, 1.0, 1.0, 1.0],
+      ready: false,
+      loading: false,
+      bufferInfo: null,
+    },
+    // LEFT
+    {
+      objPath: "../models/flatWindow.obj",
+      texture: window.simpleWindowTexture,
+      position: [-1.96, 3.1, -6.98],
+      scale: [1.8, 1.8, 1.5],
+      color: [1.0, 1.0, 1.0, 1.0],
+      ready: false,
+      loading: false,
+      bufferInfo: null,
+    },
+    // RIGHT
+    {
+      objPath: "../models/flatWindow.obj",
+      texture: window.simpleWindowTexture,
+      position: [1.96, 3.1, -6.98],
+      scale: [1.8, 1.8, 1.5],
+      color: [1.0, 1.0, 1.0, 1.0],
+      ready: false,
+      loading: false,
+      bufferInfo: null,
+    },
+    // BACK
+    {
+      objPath: "../models/circularWindow.obj",
+      texture: window.circularWindowTexture,
+      position: [0, 6.6, -6.98],
+      scale: [1, 1, 1],
+      color: [0.9, 0.9, 1.0, 1.0],
+      ready: false,
+      loading: false,
+      bufferInfo: null,
+    },
+    // FRONT
+    {
+      objPath: "../models/circularWindow.obj",
+      texture: window.circularWindowTexture,
+      position: [0, 6.6, 6.98],
+      scale: [1, 1, 1],
+      color: [0.9, 0.9, 1.0, 1.0],
+      ready: false,
+      loading: false,
+      bufferInfo: null,
+    },
+
+  ];
+
+  // 3. Carica le mesh delle finestre
+  for (const w of state.windows) {
+    await loadWindowMesh(gl, w);
+  }
+}
+
 function drawChapel(view, projection, cameraPosition, lightDirection) {
   for (const part of chapelParts) {
     drawPart(part, view, projection, cameraPosition, lightDirection);
   }
 
-  drawWindow(view, projection, cameraPosition, lightDirection);
+  for (const w of state.windows) {
+    drawWindow(view, projection, cameraPosition, lightDirection, w);
+  }
+
   drawRoof(view, projection, cameraPosition, lightDirection);
+  drawCircularWall(view, projection, cameraPosition, lightDirection);
 }

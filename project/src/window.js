@@ -1,9 +1,6 @@
 "use strict";
 
-let windowBufferInfo = null;
-
-const WINDOW_MODEL = {
-  objPath: "../models/flatWindow.obj",
+const WINDOW_DEFAULTS = {
   fallbackU: 0.5,
   fallbackV: 0.5,
   rotationY: Math.PI / 2,
@@ -44,7 +41,7 @@ function buildWindowArrays(mesh) {
       if (ti && mesh.textCoords && mesh.textCoords[ti]) {
         texcoords.push(mesh.textCoords[ti].u, mesh.textCoords[ti].v);
       } else {
-        texcoords.push(WINDOW_MODEL.fallbackU, WINDOW_MODEL.fallbackV);
+        texcoords.push(WINDOW_DEFAULTS.fallbackU, WINDOW_DEFAULTS.fallbackV);
       }
     }
   }
@@ -56,51 +53,53 @@ function buildWindowArrays(mesh) {
   };
 }
 
-async function loadWindowMesh(gl) {
-  const response = await fetch(WINDOW_MODEL.objPath);
+async function loadWindowMesh(gl, win) {
+  if (win.loading) return;
+  win.loading = true;
+
+  const response = await fetch(win.objPath);
   if (!response.ok) {
-    throw new Error(`Impossibile caricare OBJ: ${WINDOW_MODEL.objPath}`);
+    throw new Error(`Impossibile caricare OBJ: ${win.objPath}`);
   }
 
   const text = await response.text();
-
   const mesh = new subd_mesh();
   glmReadOBJ(text, mesh);
   Unitize(mesh);
 
   const arrays = buildWindowArrays(mesh);
-  windowBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
-
-  state.window3D.ready = true;
+  win.bufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
+  win.ready = true;
+  win.loading = false;
 }
 
-function getWindowWorld() {
+function getWindowWorld(win) {
   let world = m4.identity();
 
   world = m4.translate(
     world,
-    state.window3D.position[0],
-    state.window3D.position[1],
-    state.window3D.position[2]
+    win.position[0],
+    win.position[1],
+    win.position[2]
   );
 
-  world = m4.yRotate(world, WINDOW_MODEL.rotationY);
+  world = m4.yRotate(world, WINDOW_DEFAULTS.rotationY);
 
   world = m4.scale(
     world,
-    state.window3D.scale[0],
-    state.window3D.scale[1],
-    state.window3D.scale[2]
+    win.scale[0],
+    win.scale[1],
+    win.scale[2]
   );
 
   return world;
 }
 
-function drawWindow(view, projection, cameraPosition, lightDirection) {
+function drawWindow(view, projection, cameraPosition, lightDirection, win) {
   if (!state.showWindowEffect) return;
-  if (!state.window3D.ready || !windowBufferInfo) return;
+  if (!win.ready || !win.bufferInfo) return;
 
-  const world = getWindowWorld();
+  const world = getWindowWorld(win);
   const worldInverseTranspose = m4.transpose(m4.inverse(world));
 
   const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
@@ -109,7 +108,7 @@ function drawWindow(view, projection, cameraPosition, lightDirection) {
   gl.disable(gl.CULL_FACE);
 
   gl.useProgram(programInfo.program);
-  webglUtils.setBuffersAndAttributes(gl, programInfo, windowBufferInfo);
+  webglUtils.setBuffersAndAttributes(gl, programInfo, win.bufferInfo);
 
   webglUtils.setUniforms(programInfo, {
     u_world: world,
@@ -118,13 +117,13 @@ function drawWindow(view, projection, cameraPosition, lightDirection) {
     u_worldInverseTranspose: worldInverseTranspose,
     u_lightDirection: lightDirection,
     u_viewWorldPosition: cameraPosition,
-    u_colorMult: state.window3D.color,
-    u_texture: window.windowTexture,
+    u_colorMult: win.color,
+    u_texture: win.texture,  
     u_ambient: effectiveAmbient,
     u_lightIntensity: effectiveLightIntensity,
   });
 
-  webglUtils.drawBufferInfo(gl, windowBufferInfo);
+  webglUtils.drawBufferInfo(gl, win.bufferInfo);
 
   gl.enable(gl.CULL_FACE);
 }
