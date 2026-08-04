@@ -124,5 +124,6 @@ function drawChapel(view, projection, cameraPosition, lightDirection) {
   }
 
   drawRoof(view, projection, cameraPosition, lightDirection);
-  drawCircularWall(view, projection, cameraPosition, lightDirection);
+  drawCircularWall(view, projection, cameraPosition, lightDirection, circularWallFrontBufferInfo);
+  drawCircularWall(view, projection, cameraPosition, lightDirection, circularWallBackBufferInfo);
 }

@@ -1,7 +1,6 @@
 "use strict";
 
 let chapelRoofBufferInfo = null;
-let circularWallBufferInfo = null;
 
 const ROOF = {
   outerRadius: 4.10,
@@ -174,20 +173,30 @@ function drawRoof(view, projection, cameraPosition, lightDirection) {
 }
 
 function initCircularWall(gl) {
-  circularWallBufferInfo = createCircularWallBufferInfo(
+  circularWallFrontBufferInfo = createCircularWallBufferInfo(
     gl,
-    CIRCULAR_WALL.outerRadius,      // <- solo raggio esterno
+    CIRCULAR_WALL.outerRadius,     
     CIRCULAR_WALL.thickness,
+    CHAPEL_DIMS.frontWallZ,
     64
   );
+
+  circularWallBackBufferInfo = createCircularWallBufferInfo(
+    gl,
+    CIRCULAR_WALL.outerRadius,     
+    CIRCULAR_WALL.thickness,
+    CHAPEL_DIMS.backWallZ,
+    64
+  );
+
+
 }
 
-function createCircularWallBufferInfo(gl, radius, thickness, arcSteps = 64) {
+function createCircularWallBufferInfo(gl, radius, thickness, zFront, arcSteps = 64) {
   const positions = [];
   const normals = [];
   const texcoords = [];
 
-  const zFront = CHAPEL_DIMS.frontWallZ;
   const halfThickness = thickness / 2;
   const z0 = zFront - halfThickness; // retro
   const z1 = zFront + halfThickness; // fronte
@@ -253,8 +262,8 @@ function createCircularWallBufferInfo(gl, radius, thickness, arcSteps = 64) {
   });
 }
 
-function drawCircularWall(view, projection, cameraPosition, lightDirection) {
-  if (!circularWallBufferInfo) return;
+function drawCircularWall(view, projection, cameraPosition, lightDirection, bufferInfo) {
+  if (!bufferInfo) return;
 
   let world = m4.identity();
 
@@ -269,7 +278,7 @@ function drawCircularWall(view, projection, cameraPosition, lightDirection) {
 
   gl.disable(gl.CULL_FACE);
   gl.useProgram(programInfo.program);
-  webglUtils.setBuffersAndAttributes(gl, programInfo, circularWallBufferInfo);
+  webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
 
   webglUtils.setUniforms(programInfo, {
     u_world: world,
@@ -284,6 +293,6 @@ function drawCircularWall(view, projection, cameraPosition, lightDirection) {
     u_lightIntensity: effectiveLightIntensity,
   });
 
-  webglUtils.drawBufferInfo(gl, circularWallBufferInfo);
+  webglUtils.drawBufferInfo(gl, bufferInfo);
   gl.enable(gl.CULL_FACE);
 }

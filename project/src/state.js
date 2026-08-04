@@ -7,6 +7,10 @@ let programInfo = null;
 let floorBufferInfo = null;
 let floorTexture = null;
 
+let circularWallFrontBufferInfo = null;
+let circularWallBackBufferInfo = null;
+
+
 // Camera defaults
 const CAMERA_DEFAULTS = {
   yaw: 0.0,
