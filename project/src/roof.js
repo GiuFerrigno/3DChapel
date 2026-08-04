@@ -176,92 +176,73 @@ function drawRoof(view, projection, cameraPosition, lightDirection) {
 function initCircularWall(gl) {
   circularWallBufferInfo = createCircularWallBufferInfo(
     gl,
-    CIRCULAR_WALL.outerRadius,
-    CIRCULAR_WALL.innerRadius,
+    CIRCULAR_WALL.outerRadius,      // <- solo raggio esterno
     CIRCULAR_WALL.thickness,
     64
   );
 }
 
-function createCircularWallBufferInfo(gl, outerR, innerR, thickness, arcSteps = 64) {
+function createCircularWallBufferInfo(gl, radius, thickness, arcSteps = 64) {
   const positions = [];
   const normals = [];
   const texcoords = [];
 
   const zFront = CHAPEL_DIMS.frontWallZ;
   const halfThickness = thickness / 2;
-  const z0 = zFront - halfThickness;
-  const z1 = zFront + halfThickness;
+  const z0 = zFront - halfThickness; // retro
+  const z1 = zFront + halfThickness; // fronte
+
+  // Centro del semicerchio (in x,y)
+  const cx = 0;
+  const cy = 0;
 
   for (let ia = 0; ia < arcSteps; ia++) {
     const t0 = ia / arcSteps;
     const t1 = (ia + 1) / arcSteps;
 
-    const a0 = Math.PI - t0 * Math.PI;      // da sinistra (pi) a centro
-    const a1 = Math.PI - t1 * Math.PI;      // verso destra (0)
+    // Angoli: da π (sinistra) a 0 (destra)
+    const a0 = Math.PI - t0 * Math.PI;
+    const a1 = Math.PI - t1 * Math.PI;
 
-    const xOuter0 = Math.cos(a0) * outerR;
-    const yOuter0 = Math.sin(a0) * outerR;
-    const xOuter1 = Math.cos(a1) * outerR;
-    const yOuter1 = Math.sin(a1) * outerR;
+    // Punti sul bordo esterno
+    const x0 = Math.cos(a0) * radius;
+    const y0 = Math.sin(a0) * radius;
+    const x1 = Math.cos(a1) * radius;
+    const y1 = Math.sin(a1) * radius;
 
-    const xInner0 = Math.cos(a0) * innerR;
-    const yInner0 = Math.sin(a0) * innerR;
-    const xInner1 = Math.cos(a1) * innerR;
-    const yInner1 = Math.sin(a1) * innerR;
-
-    // fronte semicircolare (faccia visibile)
-    // triangolo 1
+    // --- Faccia frontale (z = z1) ---
+    // Un triangolo per "spicchio": centro -> bordo0 -> bordo1
     positions.push(
-      xOuter0, yOuter0, z1,
-      xOuter1, yOuter1, z1,
-      xInner0, yInner0, z1
-    );
-    // triangolo 2
-    positions.push(
-      xOuter1, yOuter1, z1,
-      xInner1, yInner1, z1,
-      xInner0, yInner0, z1
+      cx, cy, z1,       // centro
+      x0, y0, z1,       // bordo0
+      x1, y1, z1        // bordo1
     );
 
-    // normali verso l'interno della cappella (grossolanamente +z)
-    for (let i = 0; i < 6; i++) {
-      normals.push(0, 0, 1);
-    }
+    // Normali fronte: +z
+    normals.push(0, 0, 1, 0, 0, 1, 0, 0, 1);
 
-    // UV semplici (mappatura polare grossolana)
+    // UV: centro (0,0) e bordo (t,1)
     texcoords.push(
+      0.0, 0.0,
       t0, 1.0,
-      t1, 1.0,
-      t0, 0.0,
-
-      t1, 1.0,
-      t1, 0.0,
-      t0, 0.0
+      t1, 1.0
     );
 
-    // faccia posteriore (opzionale, se ti serve spessore)
+    // --- Faccia posteriore (z = z0) ---
     positions.push(
-      xOuter0, yOuter0, z0,
-      xInner0, yInner0, z0,
-      xOuter1, yOuter1, z0
+      cx, cy, z0,       // centro
+      x1, y1, z0,       // bordo1
+      x0, y0, z0        // bordo0
     );
-    positions.push(
-      xOuter1, yOuter1, z0,
-      xInner0, yInner0, z0,
-      xInner1, yInner1, z0
-    );
-    for (let i = 0; i < 6; i++) {
-      normals.push(0, 0, -1);
-    }
+
+    // Normali retro: -z
+    normals.push(0, 0, -1, 0, 0, -1, 0, 0, -1);
+
+    // UV retro
     texcoords.push(
-      t0, 1.0,
-      t0, 0.0,
+      0.0, 0.0,
       t1, 1.0,
-
-      t1, 1.0,
-      t0, 0.0,
-      t1, 0.0
+      t0, 1.0
     );
   }
 
