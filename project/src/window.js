@@ -1,5 +1,6 @@
 "use strict";
 
+/*
 const WINDOW_DEFAULTS = {
   fallbackU: 0.5,
   fallbackV: 0.5,
@@ -127,3 +128,5 @@ function drawWindow(view, projection, cameraPosition, lightDirection, win) {
 
   gl.enable(gl.CULL_FACE);
 }
+
+*/

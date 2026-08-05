@@ -1,9 +1,12 @@
 "use strict";
 
-// Non usato al momento 
+// NON USATO
+/*
 const OBJ_PATHS = {
   mainAltar: "../models/altar2.obj",
+  chapel: "../models/chapel.obj",
 };
+*/
 
 const TEXTURE_PATHS = {
   floor: "../textures/floor.jpg",
@@ -11,9 +14,9 @@ const TEXTURE_PATHS = {
   wall: "../textures/wall.jpg",
   wood: "../textures/wood.jpg",
   column: "../textures/column.jpg",
-  stainedGlass: "../models/stained-glass.png",
-  circularStainedGlass: "../models/circular-glass.png",
-  simpleGlass: "../models/stained-glass-simple.png", 
+  stainedGlass: "../textures/stained-glass.png",
+  circularStainedGlass: "../textures/circular-glass.png",
+  simpleGlass: "../textures/stained-glass-simple.png", 
 };
 
 const TEXTURE_DEFAULTS = {
@@ -89,4 +92,20 @@ async function loadSceneTextures(gl) {
   window.simpleWindowTexture = loadTexturePOT(gl, TEXTURE_PATHS.simpleGlass, TEXTURE_DEFAULTS.potSize);
 
   window.meshTexture = window.wallTexture;
+
+
+
+  // Texture cappella
+  chapelParts.roofCurved.texture      = window.wallTexture;          // da cercare 
+  chapelParts.floor.texture           = window.floorTilesTexture;
+  chapelParts.walls.texture           = window.wallTexture;          // da cercare
+  chapelParts.roof.texture            = window.wallTexture;          // da cercare 
+  chapelParts.door.texture            = window.woodTexture;          // da cercare 
+  chapelParts.window.texture          = window.windowTexture;
+  chapelParts.windowLeft.texture      = window.simpleWindowTexture;
+  chapelParts.windowRight.texture     = window.simpleWindowTexture;
+  chapelParts.circWindow.texture      = window.circularWindowTexture;
+
+  // Texture altre parti? 
+
 }

@@ -1,6 +1,7 @@
 "use strict";
 
 // Crea il buffer di un cubo unitario con normali per faccia e UV base
+/*
 function createBoxBufferInfo(gl) {
   const arrays = {
     position: {
@@ -109,3 +110,4 @@ function createBoxBufferInfo(gl) {
 
   return webglUtils.createBufferInfoFromArrays(gl, arrays);
 }
+  */

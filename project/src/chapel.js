@@ -1,315 +1,260 @@
 "use strict";
 
-function makePart(tx, ty, tz, sx, sy, sz, color, material = "white") {
+const chapel = {
+  objPath: '../models/chapel.obj',
+  position: [0, 0, 0],
+  scale:    [10, 10, 10],
+};
+
+const chapelParts = {
+  walls: {
+    objName: 'Walls',
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],    // muro
+  },
+  roof: {
+    objName: 'Roof',
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],    // tetto
+  },
+  floor: {
+    objName: 'Floor',
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],    // pavimento
+  },
+  door: {
+    objName: 'Door',
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],    // legno porta
+  },
+  window: {
+    objName: 'Window',
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],    // vetro finestra centrale
+  },
+  windowLeft: {
+    objName: 'WindowLeft',
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],    // vetro finestra sinistra
+  },
+  windowRight: {
+    objName: 'WindowRight',
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],    // vetro finestra destra
+  },
+  circWindow: {
+    objName: 'CircWindow',
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],    // vetro finestra circolare
+  },
+  roofCurved: {
+    objName: 'Cupola',
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],    // materiale tetto/cupola
+  },
+};
+
+/*
+function buildChapelArrays(mesh) {
+  const positions = [];
+  const normals = [];
+  const texcoords = [];
+
+  for (let i = 1; i <= mesh.nface; i++) {
+    const face = mesh.face[i];
+
+    for (let k = 0; k < 3; k++) {
+      const vi = face.vert[k];
+      const v = mesh.vert[vi];
+      positions.push(v.x, v.y, v.z);
+
+      let nx = 0, ny = 0, nz = 1;
+      const ni = face.normalVertexIndex && face.normalVertexIndex[k];
+
+      if (ni && mesh.normal[ni]) {
+        nx = mesh.normal[ni].i;
+        ny = mesh.normal[ni].j;
+        nz = mesh.normal[ni].k;
+      } else if (mesh.facetnorms && mesh.facetnorms[face.normalFaceIndex]) {
+        nx = mesh.facetnorms[face.normalFaceIndex].i;
+        ny = mesh.facetnorms[face.normalFaceIndex].j;
+        nz = mesh.facetnorms[face.normalFaceIndex].k;
+      }
+
+      normals.push(nx, ny, nz);
+
+      const ti = face.textCoordsIndex && face.textCoordsIndex[k];
+      if (ti && mesh.textCoords && mesh.textCoords[ti]) {
+        texcoords.push(mesh.textCoords[ti].u, mesh.textCoords[ti].v);
+      } else {
+        texcoords.push(0.0, 0.0); // fallback per la cappella
+      }
+    }
+  }
+
   return {
-    t: [tx, ty, tz],
-    s: [sx, sy, sz],
-    color: color,
-    material: material,
+    position: { numComponents: 3, data: new Float32Array(positions) },
+    normal:   { numComponents: 3, data: new Float32Array(normals) },
+    texcoord: { numComponents: 2, data: new Float32Array(texcoords) },
   };
 }
+*/
 
-function buildChapelParts() {
-  const parts = [];
 
-  const wallY = CHAPEL_DIMS.wallHeight / 2;
-  const frontWallY = CHAPEL_DIMS.frontWallHeight / 2;
-  const columnY = COLUMN_DIMS.shaftHeight / 2;
-
-  const columnBaseY = COLUMN_DIMS.baseHeight / 2;
-  const columnCapY = COLUMN_DIMS.shaftHeight + COLUMN_DIMS.capHeight / 2;
-
-  const holeLeft = 3 * (WINDOW_OPENING.centerX - WINDOW_OPENING.width / 2);
-  const holeRight = 3 * (WINDOW_OPENING.centerX + WINDOW_OPENING.width / 2);
-  const holeBottom = WINDOW_OPENING.centerY - WINDOW_OPENING.height / 2;
-  const holeTop = WINDOW_OPENING.centerY + WINDOW_OPENING.height / 2;
-
-  // Pavimento
-  parts.push(makePart(
-    0,
-    CHAPEL_DIMS.floorY,
-    0,
-    CHAPEL_DIMS.floorWidth,
-    CHAPEL_DIMS.floorHeight,
-    CHAPEL_DIMS.floorDepth,
-    COLORS.floor,
-    "floor"
-  ));
-
-  // Pareti laterali
-  parts.push(makePart(
-    CHAPEL_DIMS.leftWallX,
-    wallY,
-    0,
-    CHAPEL_DIMS.wallThickness,
-    CHAPEL_DIMS.wallHeight,
-    CHAPEL_DIMS.floorDepth,
-    COLORS.sideWall,
-    "wall"
-  ));
-
-  parts.push(makePart(
-    CHAPEL_DIMS.rightWallX,
-    wallY,
-    0,
-    CHAPEL_DIMS.wallThickness,
-    CHAPEL_DIMS.wallHeight,
-    CHAPEL_DIMS.floorDepth,
-    COLORS.sideWall,
-    "wall"
-  ));
-
-  // Fondo con apertura per la vetrata
-  parts.push(makePart(
-    0,
-    holeBottom / 2,
-    CHAPEL_DIMS.backWallZ,
-    CHAPEL_DIMS.backWallWidth,
-    holeBottom,
-    CHAPEL_DIMS.wallThickness,
-    COLORS.backWall,
-    "wall"
-  ));
-
-  parts.push(makePart(
-    (CHAPEL_DIMS.leftWallX + holeLeft) / 2,
-    WINDOW_OPENING.centerY,
-    CHAPEL_DIMS.backWallZ,
-    holeLeft - CHAPEL_DIMS.leftWallX,
-    WINDOW_OPENING.height,
-    CHAPEL_DIMS.wallThickness,
-    COLORS.backWall,
-    "wall"
-  ));
-
-  parts.push(makePart(
-    (holeRight + CHAPEL_DIMS.rightWallX) / 2,
-    WINDOW_OPENING.centerY,
-    CHAPEL_DIMS.backWallZ,
-    CHAPEL_DIMS.rightWallX - holeRight,
-    WINDOW_OPENING.height,
-    CHAPEL_DIMS.wallThickness,
-    COLORS.backWall,
-    "wall"
-  ));
-
-    // Facciata frontale
-  parts.push(makePart(
-    -2.6,
-    frontWallY,
-    CHAPEL_DIMS.frontWallZ,
-    2.8,
-    CHAPEL_DIMS.frontWallHeight,
-    CHAPEL_DIMS.wallThickness,
-    COLORS.frontWall,
-    "wall"
-  ));
-
-  parts.push(makePart(
-    2.6,
-    frontWallY,
-    CHAPEL_DIMS.frontWallZ,
-    2.8,
-    CHAPEL_DIMS.frontWallHeight,
-    CHAPEL_DIMS.wallThickness,
-    COLORS.frontWall,
-    "wall"
-  ));
-
-  // Pedana altare
-  parts.push(makePart(
-    0,
-    ALTAR_DIMS.platformY,
-    ALTAR_DIMS.platformZ,
-    ALTAR_DIMS.platformWidth,
-    ALTAR_DIMS.platformHeight,
-    ALTAR_DIMS.platformDepth,
-    COLORS.platform,
-    "wall"
-  ));
-
-  // Altare
-  parts.push(makePart(
-    0,
-    ALTAR_DIMS.altarBaseY,
-    ALTAR_DIMS.platformZ,
-    ALTAR_DIMS.altarBaseWidth,
-    ALTAR_DIMS.altarBaseHeight,
-    ALTAR_DIMS.altarBaseDepth,
-    COLORS.altarBase,
-    "wall"
-  ));
-
-  parts.push(makePart(
-    0,
-    ALTAR_DIMS.altarTopY,
-    ALTAR_DIMS.platformZ,
-    ALTAR_DIMS.altarTopWidth,
-    ALTAR_DIMS.altarTopHeight,
-    ALTAR_DIMS.altarTopDepth,
-    COLORS.altarTop,
-    "wall"
-  ));
-
-  // Panche
-  for (const z of BENCH_ROWS_Z) {
-    parts.push(makePart(
-      BENCH_DIMS.leftX,
-      BENCH_DIMS.seatY,
-      z,
-      BENCH_DIMS.seatWidth,
-      BENCH_DIMS.seatHeight,
-      BENCH_DIMS.seatDepth,
-      COLORS.benchSeat,
-      "wood"
-    ));
-
-    parts.push(makePart(
-      BENCH_DIMS.leftX,
-      BENCH_DIMS.backrestY,
-      z + BENCH_DIMS.backrestZOffset,
-      BENCH_DIMS.backrestWidth,
-      BENCH_DIMS.backrestHeight,
-      BENCH_DIMS.backrestDepth,
-      COLORS.benchBack,
-      "wood"
-    ));
-
-    parts.push(makePart(
-      BENCH_DIMS.legLeftXLeft,
-      BENCH_DIMS.legY,
-      z,
-      BENCH_DIMS.legWidth,
-      BENCH_DIMS.legHeight,
-      BENCH_DIMS.legDepth,
-      COLORS.benchLeg,
-      "wood"
-    ));
-
-    parts.push(makePart(
-      BENCH_DIMS.legRightXLeft,
-      BENCH_DIMS.legY,
-      z,
-      BENCH_DIMS.legWidth,
-      BENCH_DIMS.legHeight,
-      BENCH_DIMS.legDepth,
-      COLORS.benchLeg,
-      "wood"
-    ));
-
-    parts.push(makePart(
-      BENCH_DIMS.rightX,
-      BENCH_DIMS.seatY,
-      z,
-      BENCH_DIMS.seatWidth,
-      BENCH_DIMS.seatHeight,
-      BENCH_DIMS.seatDepth,
-      COLORS.benchSeat,
-      "wood"
-    ));
-
-    parts.push(makePart(
-      BENCH_DIMS.rightX,
-      BENCH_DIMS.backrestY,
-      z + BENCH_DIMS.backrestZOffset,
-      BENCH_DIMS.backrestWidth,
-      BENCH_DIMS.backrestHeight,
-      BENCH_DIMS.backrestDepth,
-      COLORS.benchBack,
-      "wood"
-    ));
-
-    parts.push(makePart(
-      BENCH_DIMS.legLeftXRight,
-      BENCH_DIMS.legY,
-      z,
-      BENCH_DIMS.legWidth,
-      BENCH_DIMS.legHeight,
-      BENCH_DIMS.legDepth,
-      COLORS.benchLeg,
-      "wood"
-    ));
-
-    parts.push(makePart(
-      BENCH_DIMS.legRightXRight,
-      BENCH_DIMS.legY,
-      z,
-      BENCH_DIMS.legWidth,
-      BENCH_DIMS.legHeight,
-      BENCH_DIMS.legDepth,
-      COLORS.benchLeg,
-      "wood"
-    ));
+async function loadChapelMeshes(gl) {
+  const response = await fetch(chapel.objPath);
+  if (!response.ok) {
+    throw new Error(`Impossibile caricare OBJ: chapel.obj`);
   }
 
-  // Colonne
-  for (const z of COLUMN_ROWS_Z) {
-    parts.push(makePart(
-      COLUMN_DIMS.xLeft,
-      columnY,
-      z,
-      COLUMN_DIMS.shaftSize,
-      COLUMN_DIMS.shaftHeight,
-      COLUMN_DIMS.shaftSize,
-      COLORS.columnShaft,
-      "col"
-    ));
+  const text = await response.text();
 
-    parts.push(makePart(
-      COLUMN_DIMS.xRight,
-      columnY,
-      z,
-      COLUMN_DIMS.shaftSize,
-      COLUMN_DIMS.shaftHeight,
-      COLUMN_DIMS.shaftSize,
-      COLORS.columnShaft,
-      "col"
-    ));
+  const mesh = new subd_mesh();
+  glmReadOBJ(text, mesh);
+  Unitize(mesh);
 
-    parts.push(makePart(
-      COLUMN_DIMS.xLeft,
-      columnBaseY,
-      z,
-      COLUMN_DIMS.baseSize,
-      COLUMN_DIMS.baseHeight,
-      COLUMN_DIMS.baseSize,
-      COLORS.columnBase,
-      "col"
-    ));
+  // Mappa dei group (in base alle righe g ... ):
+  // 1: RoofCurved_Mesh
+  // 2: Floor_Mesh
+  // 3: Roof_Mesh
+  // 4: Walls_Mesh
+  // 5: Door_Mesh
+  // 6: CircWindow_Mesh
+  // 7: Window_Mesh
+  // 8: WindowLeft_Mesh
+  // 9: WindowRIght_Mesh
 
-    parts.push(makePart(
-      COLUMN_DIMS.xRight,
-      columnBaseY,
-      z,
-      COLUMN_DIMS.baseSize,
-      COLUMN_DIMS.baseHeight,
-      COLUMN_DIMS.baseSize,
-      COLORS.columnBase,
-      "col"
-    ));
+  chapelParts.roofCurved.bufferInfo  = createBufferForGroup(gl, mesh, 1);
+  chapelParts.floor.bufferInfo       = createBufferForGroup(gl, mesh, 2);
+  chapelParts.roof.bufferInfo        = createBufferForGroup(gl, mesh, 3);
+  chapelParts.walls.bufferInfo       = createBufferForGroup(gl, mesh, 4);
+  chapelParts.door.bufferInfo        = createBufferForGroup(gl, mesh, 5);
+  chapelParts.circWindow.bufferInfo  = createBufferForGroup(gl, mesh, 6);
+  chapelParts.window.bufferInfo= createBufferForGroup(gl, mesh, 7);
+  chapelParts.windowLeft.bufferInfo  = createBufferForGroup(gl, mesh, 8);
+  chapelParts.windowRight.bufferInfo = createBufferForGroup(gl, mesh, 9);
+}
 
-    parts.push(makePart(
-      COLUMN_DIMS.xLeft,
-      columnCapY,
-      z,
-      COLUMN_DIMS.baseSize,
-      COLUMN_DIMS.capHeight,
-      COLUMN_DIMS.baseSize,
-      COLORS.columnBase,
-      "col"
-    ));
+function createBufferForGroup(gl, mesh, groupIndex) {
+  const positions = [];
+  const normals   = [];
+  const texcoords = [];
 
-    parts.push(makePart(
-      COLUMN_DIMS.xRight,
-      columnCapY,
-      z,
-      COLUMN_DIMS.baseSize,
-      COLUMN_DIMS.capHeight,
-      COLUMN_DIMS.baseSize,
-      COLORS.columnBase,
-      "col"
-    ));
+  for (let i = 1; i <= mesh.nface; i++) {
+    const face = mesh.face[i];
+
+    if (face.group !== groupIndex) continue;
+
+    for (let k = 0; k < 3; k++) {
+      const vi = face.vert[k];
+      const v  = mesh.vert[vi];
+      positions.push(v.x, v.y, v.z);
+
+      let nx = 0, ny = 0, nz = 1;
+      const ni = face.normalVertexIndex && face.normalVertexIndex[k];
+
+      if (ni && mesh.normal[ni]) {
+        nx = mesh.normal[ni].i;
+        ny = mesh.normal[ni].j;
+        nz = mesh.normal[ni].k;
+      } else if (mesh.facetnorms && mesh.facetnorms[face.normalFaceIndex]) {
+        nx = mesh.facetnorms[face.normalFaceIndex].i;
+        ny = mesh.facetnorms[face.normalFaceIndex].j;
+        nz = mesh.facetnorms[face.normalFaceIndex].k;
+      }
+
+      normals.push(nx, ny, nz);
+
+      const ti = face.textCoordsIndex && face.textCoordsIndex[k];
+      if (ti && mesh.textCoords && mesh.textCoords[ti]) {
+        texcoords.push(mesh.textCoords[ti].u, mesh.textCoords[ti].v);
+      } else {
+        texcoords.push(0.0, 0.0);
+      }
+    }
   }
 
-  return parts;
+  const arrays = {
+    position: { numComponents: 3, data: new Float32Array(positions) },
+    normal:   { numComponents: 3, data: new Float32Array(normals) },
+    texcoord: { numComponents: 2, data: new Float32Array(texcoords) },
+  };
+
+  return webglUtils.createBufferInfoFromArrays(gl, arrays);
+}
+
+function getChapelWorld() {
+  let world = m4.identity();
+
+  world = m4.translate(
+    world,
+    chapel.position[0],
+    chapel.position[1],
+    chapel.position[2]
+  );
+
+  // se vuoi ruotare la cappella, aggiungi qui m4.yRotate / m4.xRotate
+  const rotationY = Math.PI;   // 180 gradi in radianti
+  world = m4.yRotate(world, rotationY);
+
+  world = m4.scale(
+    world,
+    chapel.scale[0],
+    chapel.scale[1],
+    chapel.scale[2]
+  );
+
+  return world;
+}
+
+function drawChapel(view, projection, cameraPosition, lightDirection) {
+  const world = getChapelWorld();
+  const worldInverseTranspose = m4.transpose(m4.inverse(world));
+
+  const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
+  const effectiveLightIntensity = state.lightEnabled ? state.lightIntensity : 0.0;
+
+  gl.useProgram(programInfo.program);
+
+  const commonUniforms = {
+    u_world: world,
+    u_view: view,
+    u_projection: projection,
+    u_worldInverseTranspose: worldInverseTranspose,
+    u_lightDirection: lightDirection,
+    u_viewWorldPosition: cameraPosition,
+    u_ambient: effectiveAmbient,
+    u_lightIntensity: effectiveLightIntensity,
+  };
+
+  function drawPart(part) {
+    if (!part.bufferInfo || !part.texture) return;
+
+    webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
+    webglUtils.setUniforms(programInfo, {
+      ...commonUniforms,
+      u_colorMult: part.color,
+      u_texture: part.texture,
+    });
+    webglUtils.drawBufferInfo(gl, part.bufferInfo);
+  }
+
+  drawPart(chapelParts.floor);
+  drawPart(chapelParts.walls);
+  drawPart(chapelParts.roof);
+  drawPart(chapelParts.roofCurved);
+  drawPart(chapelParts.door);
+  drawPart(chapelParts.window);
+  drawPart(chapelParts.windowLeft);
+  drawPart(chapelParts.windowRight);
+  drawPart(chapelParts.circWindow);
 }

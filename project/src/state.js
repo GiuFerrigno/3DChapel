@@ -4,19 +4,20 @@ let gl = null;
 let programInfo = null;
 
 // Buffer / texture references
+/*
 let floorBufferInfo = null;
 let floorTexture = null;
 
 let circularWallFrontBufferInfo = null;
 let circularWallBackBufferInfo = null;
-
+*/
 
 // Camera defaults
 const CAMERA_DEFAULTS = {
-  yaw: 0.0,
-  pitch: 0.35,
-  dist: 12.0,
-  target: [0, 1.2, -1.5],
+  yaw: 0.0,            // frontale
+  pitch: 0.2,          // quasi orizzontale, altezza uomo
+  dist: 16.0,          // lontano abbastanza da vedere tutto
+  target: [0, 1.6, 0], // circa altezza occhi (1.6 m)
 };
 
 // Light defaults
@@ -52,9 +53,9 @@ const state = {
   lightEnabled: LIGHT_DEFAULTS.enabled,
 
   // Window effect
+  // Non usato al momento 
   showWindowEffect: WINDOW_EFFECT_DEFAULTS.visible,
 
-  windows: [],
 };
 
 // Input state
@@ -74,6 +75,7 @@ let keys = {
 };
 
 // Chapel Constants
+/*
 const CHAPEL_DIMS = {
   floorY: -0.05,
   floorWidth: 8.0,
@@ -97,6 +99,7 @@ const WINDOW_OPENING = {
   width: 2.0,
   height: 3.4,
 };
+*/
 
 const COLUMN_DIMS = {
   xLeft: -3.0,
@@ -169,6 +172,7 @@ const COLORS = {
   columnBase: [0.68, 0.68, 0.70, 1],
 };
 
+/*
 const CIRCULAR_WINDOW = {
   centerX: 0.0,
   centerY: 6.6,      
@@ -181,3 +185,4 @@ const CIRCULAR_WALL = {
   thickness: CHAPEL_DIMS.wallThickness,
   color: COLORS.frontWall,
 };
+*/

@@ -1,6 +1,9 @@
 "use strict";
 
+// DA ELIMINARE
+
 // Crea il buffer del pavimento come piano orizzontale con UV base 0..1
+/*
 function createFloorBufferInfo(gl) {
   const halfSize = 12;
 
@@ -45,3 +48,5 @@ function createFloorBufferInfo(gl) {
 
   return webglUtils.createBufferInfoFromArrays(gl, arrays);
 }
+
+*/

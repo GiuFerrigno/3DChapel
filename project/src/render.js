@@ -1,8 +1,9 @@
 "use strict";
 
 let chapelBoxBufferInfo = null;
-let chapelParts = [];
+//let chapelParts = [];
 
+/*
 function getPartWorld(part) {
   let world = m4.identity();
   world = m4.translate(world, part.t[0], part.t[1], part.t[2]);
@@ -42,7 +43,9 @@ function drawPart(part, view, projection, cameraPosition, lightDirection) {
 
   webglUtils.drawBufferInfo(gl, chapelBoxBufferInfo);
 }
+*/ 
 
+/*
 async function initSceneGeometry(gl) {
   chapelBoxBufferInfo = createBoxBufferInfo(gl);
   chapelParts = buildChapelParts();
@@ -94,17 +97,6 @@ async function initSceneGeometry(gl) {
       loading: false,
       bufferInfo: null,
     },
-    // FRONT
-    {
-      objPath: "../models/circularWindow.obj",
-      texture: window.circularWindowTexture,
-      position: [0, 6.6, 6.98],
-      scale: [1, 1, 1],
-      color: [0.9, 0.9, 1.0, 1.0],
-      ready: false,
-      loading: false,
-      bufferInfo: null,
-    },
 
   ];
 
@@ -113,17 +105,42 @@ async function initSceneGeometry(gl) {
     await loadWindowMesh(gl, w);
   }
 }
+*/
 
+
+/*
 function drawChapel(view, projection, cameraPosition, lightDirection) {
+  
   for (const part of chapelParts) {
     drawPart(part, view, projection, cameraPosition, lightDirection);
   }
+    
 
+  drawChapelObj(view, projection, cameraPosition, lightDirection);
+
+ 
   for (const w of state.windows) {
     drawWindow(view, projection, cameraPosition, lightDirection, w);
   }
 
   drawRoof(view, projection, cameraPosition, lightDirection);
   drawCircularWall(view, projection, cameraPosition, lightDirection, circularWallFrontBufferInfo);
-  drawCircularWall(view, projection, cameraPosition, lightDirection, circularWallBackBufferInfo);
+  
+
+}
+*/ 
+
+async function initSceneGeometry(gl) {
+  // 1. carica la cappella da OBJ
+  await loadChapelMeshes(gl);   // la funzione che abbiamo definito prima
+
+  //chapelParts = buildChapelParts();
+
+  // 2. carica le finestre, se le usi ancora come OBJ separati
+  //await loadWindowMesh(gl, leftWindow);
+  //await loadWindowMesh(gl, rightWindow);
+  // ... altri oggetti della scena ...
+
+  // 3. se avevi geometrie “procedurali” (panche, colonne), decidi se tenerle
+  //    oppure rimuoverle se le hai già nel modello Blender.
 }

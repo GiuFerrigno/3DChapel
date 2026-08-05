@@ -1,5 +1,6 @@
 "use strict";
 
+/*
 let chapelRoofBufferInfo = null;
 
 const ROOF = {
@@ -296,3 +297,5 @@ function drawCircularWall(view, projection, cameraPosition, lightDirection, buff
   webglUtils.drawBufferInfo(gl, bufferInfo);
   gl.enable(gl.CULL_FACE);
 }
+
+*/

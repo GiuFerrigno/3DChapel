@@ -85,7 +85,7 @@ function setupGUI() {
   const guiActions = {
     resetCamera() {
       resetCamera();
-      gui.updateDisplay();
+      //gui.updateDisplay();
     }
   };
 
@@ -133,6 +133,7 @@ function render(time) {
   const lightDirection = getLightDirection();
 
   drawChapel(view, projection, cameraPosition, lightDirection);
+  
 
   requestAnimationFrame(render);
 }
