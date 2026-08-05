@@ -3,15 +3,6 @@
 let gl = null;
 let programInfo = null;
 
-// Buffer / texture references
-/*
-let floorBufferInfo = null;
-let floorTexture = null;
-
-let circularWallFrontBufferInfo = null;
-let circularWallBackBufferInfo = null;
-*/
-
 // Camera defaults
 const CAMERA_DEFAULTS = {
   yaw: 0.0,            // frontale
@@ -74,33 +65,7 @@ let keys = {
   ShiftRight: false,
 };
 
-// Chapel Constants
-/*
-const CHAPEL_DIMS = {
-  floorY: -0.05,
-  floorWidth: 8.0,
-  floorHeight: 0.1,
-  floorDepth: 14.0,
-
-  wallHeight: 4.4,
-  frontWallHeight: 4.4,
-  wallThickness: 0.2,
-
-  leftWallX: -4.0,
-  rightWallX: 4.0,
-  frontWallZ: 7.0,
-  backWallZ: -7.0,
-  backWallWidth: 8.0,
-};
-
-const WINDOW_OPENING = {
-  centerX: 0.0,
-  centerY: 3.1,
-  width: 2.0,
-  height: 3.4,
-};
-*/
-
+// Furniture constants? 
 const COLUMN_DIMS = {
   xLeft: -3.0,
   xRight: 3.0,
@@ -171,18 +136,3 @@ const COLORS = {
   columnShaft: [0.78, 0.78, 0.80, 1],
   columnBase: [0.68, 0.68, 0.70, 1],
 };
-
-/*
-const CIRCULAR_WINDOW = {
-  centerX: 0.0,
-  centerY: 6.6,      
-  radius: 1.0,        // perché circularWindow.obj è in [-1,+1] e scale = [1,1,1]
-};
-
-const CIRCULAR_WALL = {
-  outerRadius: 3.9,             
-  innerRadius: CIRCULAR_WINDOW.radius + 0.05,  
-  thickness: CHAPEL_DIMS.wallThickness,
-  color: COLORS.frontWall,
-};
-*/

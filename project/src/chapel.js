@@ -63,53 +63,6 @@ const chapelParts = {
   },
 };
 
-/*
-function buildChapelArrays(mesh) {
-  const positions = [];
-  const normals = [];
-  const texcoords = [];
-
-  for (let i = 1; i <= mesh.nface; i++) {
-    const face = mesh.face[i];
-
-    for (let k = 0; k < 3; k++) {
-      const vi = face.vert[k];
-      const v = mesh.vert[vi];
-      positions.push(v.x, v.y, v.z);
-
-      let nx = 0, ny = 0, nz = 1;
-      const ni = face.normalVertexIndex && face.normalVertexIndex[k];
-
-      if (ni && mesh.normal[ni]) {
-        nx = mesh.normal[ni].i;
-        ny = mesh.normal[ni].j;
-        nz = mesh.normal[ni].k;
-      } else if (mesh.facetnorms && mesh.facetnorms[face.normalFaceIndex]) {
-        nx = mesh.facetnorms[face.normalFaceIndex].i;
-        ny = mesh.facetnorms[face.normalFaceIndex].j;
-        nz = mesh.facetnorms[face.normalFaceIndex].k;
-      }
-
-      normals.push(nx, ny, nz);
-
-      const ti = face.textCoordsIndex && face.textCoordsIndex[k];
-      if (ti && mesh.textCoords && mesh.textCoords[ti]) {
-        texcoords.push(mesh.textCoords[ti].u, mesh.textCoords[ti].v);
-      } else {
-        texcoords.push(0.0, 0.0); // fallback per la cappella
-      }
-    }
-  }
-
-  return {
-    position: { numComponents: 3, data: new Float32Array(positions) },
-    normal:   { numComponents: 3, data: new Float32Array(normals) },
-    texcoord: { numComponents: 2, data: new Float32Array(texcoords) },
-  };
-}
-*/
-
-
 async function loadChapelMeshes(gl) {
   const response = await fetch(chapel.objPath);
   if (!response.ok) {

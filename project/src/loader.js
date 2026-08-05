@@ -1,16 +1,8 @@
 "use strict";
 
-// NON USATO
-/*
-const OBJ_PATHS = {
-  mainAltar: "../models/altar2.obj",
-  chapel: "../models/chapel.obj",
-};
-*/
-
 const TEXTURE_PATHS = {
-  floor: "../textures/floor.jpg",
-  floorTiles: "../textures/floor2.jpg",
+  floor: "../textures/marble.jpg",
+  floorTiles: "../textures/floorTiles.jpg",
   wall: "../textures/wall.jpg",
   wood: "../textures/wood.jpg",
   column: "../textures/column.jpg",
