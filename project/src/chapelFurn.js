@@ -1,7 +1,5 @@
 "use strict";
 
-// DA SISTEMARE 
-
 function makePart(tx, ty, tz, sx, sy, sz, color, material = "white") {
   return {
     t: [tx, ty, tz],
@@ -25,66 +23,6 @@ function buildChapelParts() {
   //const holeRight = 3 * (WINDOW_OPENING.centerX + WINDOW_OPENING.width / 2);
   //const holeBottom = WINDOW_OPENING.centerY - WINDOW_OPENING.height / 2;
   //const holeTop = WINDOW_OPENING.centerY + WINDOW_OPENING.height / 2;
-
-  // Pavimento
-  /*
-  parts.push(makePart(
-    0,
-    CHAPEL_DIMS.floorY,
-    0,
-    CHAPEL_DIMS.floorWidth,
-    CHAPEL_DIMS.floorHeight,
-    CHAPEL_DIMS.floorDepth,
-    COLORS.floor,
-    "floor"
-  ));
-
-  // Pareti laterali
-  parts.push(makePart(
-    CHAPEL_DIMS.leftWallX,
-    wallY,
-    0,
-    CHAPEL_DIMS.wallThickness,
-    CHAPEL_DIMS.wallHeight,
-    CHAPEL_DIMS.floorDepth,
-    COLORS.sideWall,
-    "wall"
-  ));
-
-  parts.push(makePart(
-    CHAPEL_DIMS.rightWallX,
-    wallY,
-    0,
-    CHAPEL_DIMS.wallThickness,
-    CHAPEL_DIMS.wallHeight,
-    CHAPEL_DIMS.floorDepth,
-    COLORS.sideWall,
-    "wall"
-  ));
-
-    // Facciata frontale
-  parts.push(makePart(
-    -2.6,
-    frontWallY,
-    CHAPEL_DIMS.frontWallZ,
-    2.8,
-    CHAPEL_DIMS.frontWallHeight,
-    CHAPEL_DIMS.wallThickness,
-    COLORS.frontWall,
-    "wall"
-  ));
-
-  parts.push(makePart(
-    2.6,
-    frontWallY,
-    CHAPEL_DIMS.frontWallZ,
-    2.8,
-    CHAPEL_DIMS.frontWallHeight,
-    CHAPEL_DIMS.wallThickness,
-    COLORS.frontWall,
-    "wall"
-  ));
-  */
 
   // Pedana altare
   parts.push(makePart(
@@ -282,4 +220,55 @@ function buildChapelParts() {
   }
 
   return parts;
+}
+
+
+function drawChapelParts(view, projection, cameraPosition, lightDirection) {
+  if (!chapelPartsList || !boxBufferInfo) return;
+
+  gl.useProgram(programInfo.program);
+
+  const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
+  const effectiveLightIntensity = state.lightEnabled ? state.lightIntensity : 0.0;
+
+  const commonUniformsBase = {
+    u_view: view,
+    u_projection: projection,
+    u_lightDirection: lightDirection,
+    u_viewWorldPosition: cameraPosition,
+    u_ambient: effectiveAmbient,
+    u_lightIntensity: effectiveLightIntensity,
+  };
+
+  webglUtils.setBuffersAndAttributes(gl, programInfo, boxBufferInfo);
+
+  for (const part of chapelPartsList) {
+    let world = m4.identity();
+    world = m4.translate(
+      world,
+      part.t[0],
+      part.t[1],
+      part.t[2]
+    );
+    world = m4.scale(world, part.s[0], part.s[1], part.s[2]);
+
+    const worldInverseTranspose = m4.transpose(m4.inverse(world));
+
+    let texture = window.wallTexture;
+    if (part.material === 'wood') {
+      texture = window.woodTexture;
+    } else if (part.material === 'col') {
+      texture = window.columnTexture;
+    }
+
+    webglUtils.setUniforms(programInfo, {
+      ...commonUniformsBase,
+      u_world: world,
+      u_worldInverseTranspose: worldInverseTranspose,
+      u_colorMult: part.color,
+      u_texture: texture,
+    });
+
+    webglUtils.drawBufferInfo(gl, boxBufferInfo);
+  }
 }

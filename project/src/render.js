@@ -1,16 +1,21 @@
 "use strict";
 
-async function initSceneGeometry(gl) {
-  // 1. carica la cappella da OBJ
-  await loadChapelMeshes(gl);   // la funzione che abbiamo definito prima
+let chapelPartsList = null;
+let boxBufferInfo = null;
 
-  //chapelParts = buildChapelParts();
+function initProceduralChapelParts(gl) {
+  // 1. costruisci la lista di parti (panche, colonne, altare)
+  chapelPartsList = buildChapelParts();
 
-  // 2. carica le finestre, se le usi ancora come OBJ separati
-  //await loadWindowMesh(gl, leftWindow);
-  //await loadWindowMesh(gl, rightWindow);
-  // ... altri oggetti della scena ...
-
-  // 3. se avevi geometrie “procedurali” (panche, colonne), decidi se tenerle
-  //    oppure rimuoverle se le hai già nel modello Blender.
+  // 2. crea un box unitario (centarto) una volta sola
+  if (!boxBufferInfo) {
+    const cubeArrays = createUnitCubeArrays();   // oppure tuo createBox
+    boxBufferInfo = webglUtils.createBufferInfoFromArrays(gl, cubeArrays);
+  }
 }
+
+async function initSceneGeometry(gl) {
+  await loadChapelMeshes(gl);   // cappella da OBJ
+  initProceduralChapelParts(gl); // panche + colonne procedurali
+}
+

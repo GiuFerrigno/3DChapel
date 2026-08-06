@@ -5,10 +5,10 @@ let programInfo = null;
 
 // Camera defaults
 const CAMERA_DEFAULTS = {
-  yaw: 0.0,            // frontale
-  pitch: 0.2,          // quasi orizzontale, altezza uomo
-  dist: 16.0,          // lontano abbastanza da vedere tutto
-  target: [0, 1.6, 0], // circa altezza occhi (1.6 m)
+  yaw: 0.0,            
+  pitch: 0.1,         
+  dist: 10.0,          
+  target: [0, -0.5, -1.5], 
 };
 
 // Light defaults

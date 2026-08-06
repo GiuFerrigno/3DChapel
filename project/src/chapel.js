@@ -146,17 +146,17 @@ function createBufferForGroup(gl, mesh, groupIndex) {
 }
 
 function getChapelWorld() {
+  const offsetY = 5.1;
   let world = m4.identity();
 
   world = m4.translate(
     world,
     chapel.position[0],
-    chapel.position[1],
+    chapel.position[1] + offsetY,
     chapel.position[2]
   );
 
-  // se vuoi ruotare la cappella, aggiungi qui m4.yRotate / m4.xRotate
-  const rotationY = Math.PI;   // 180 gradi in radianti
+  const rotationY = Math.PI;   
   world = m4.yRotate(world, rotationY);
 
   world = m4.scale(

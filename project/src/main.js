@@ -133,7 +133,7 @@ function render(time) {
   const lightDirection = getLightDirection();
 
   drawChapel(view, projection, cameraPosition, lightDirection);
-  
+  drawChapelParts(view, projection, cameraPosition, lightDirection);
 
   requestAnimationFrame(render);
 }
