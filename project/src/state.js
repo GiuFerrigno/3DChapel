@@ -6,9 +6,8 @@ let programInfo = null;
 // Camera defaults
 const CAMERA_DEFAULTS = {
   yaw: 0.0,            
-  pitch: 0.1,         
-  dist: 10.0,          
-  target: [0, -0.5, -1.5], 
+  pitch: 0.1,            
+  position: [0, 1.6, 9], 
 };
 
 // Light defaults
@@ -29,8 +28,7 @@ const state = {
   // Camera
   cameraYaw: CAMERA_DEFAULTS.yaw,
   cameraPitch: CAMERA_DEFAULTS.pitch,
-  cameraDist: CAMERA_DEFAULTS.dist,
-  target: [...CAMERA_DEFAULTS.target],
+  cameraPosition: [...CAMERA_DEFAULTS.position],
 
   // Scene / animation
   meshYaw: 0,

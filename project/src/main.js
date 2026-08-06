@@ -67,11 +67,10 @@ function setupGUI() {
   const cameraFolder = gui.addFolder("Camera");
   cameraFolder.add(state, "cameraYaw", -3.14, 3.14, 0.01).name("Yaw");
   cameraFolder.add(state, "cameraPitch", 0.1, 1.2, 0.01).name("Pitch");
-  cameraFolder.add(state, "cameraDist", 4.0, 20.0, 0.1).name("Zoom");
-  cameraFolder.add(state.target, "0", -5, 5, 0.1).name("Target X");
-  cameraFolder.add(state.target, "1", 0, 4, 0.1).name("Target Y");
-  cameraFolder.add(state.target, "2", -8, 8, 0.1).name("Target Z");
-
+  cameraFolder.add(state, "cameraYaw", -Math.PI, Math.PI, 0.01).name("Look left/right");
+  cameraFolder.add(state, "cameraPitch", -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05, 0.0).name("Look up/down");
+  cameraFolder.add(state.cameraPosition, "1", 0.5, 3.0, 0.05).name("Eye height");
+  
   const lightFolder = gui.addFolder("Light");
   lightFolder.add(state, "sunAngle", 0.0, 6.28, 0.01).name("Sun angle");
   lightFolder.add(state, "ambient", 0.0, 1.0, 0.01).name("Ambient");
@@ -85,7 +84,6 @@ function setupGUI() {
   const guiActions = {
     resetCamera() {
       resetCamera();
-      //gui.updateDisplay();
     }
   };
 
@@ -127,7 +125,9 @@ function render(time) {
   const projection = m4.perspective(Math.PI / 4, aspect, 0.1, 100.0);
 
   const cameraPosition = getCameraPosition();
-  const camera = m4.lookAt(cameraPosition, state.target, [0, 1, 0]);
+  const cameraTarget = getCameraTarget();
+  const camera = m4.lookAt(cameraPosition, cameraTarget, [0, 1, 0]);
+
   const view = m4.inverse(camera);
 
   const lightDirection = getLightDirection();

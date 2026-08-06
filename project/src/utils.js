@@ -73,6 +73,7 @@ function loadTexture(gl, url) {
   });
 }
 
+/*
 // Calcola la posizione della camera orbitale a partire da yaw, pitch, distanza e target
 function getCameraPosition() {
   const cp = Math.cos(state.cameraPitch);
@@ -95,6 +96,39 @@ function resetCamera() {
   state.target[0] = CAMERA_DEFAULTS.target[0];
   state.target[1] = CAMERA_DEFAULTS.target[1];
   state.target[2] = CAMERA_DEFAULTS.target[2];
+}
+*/
+
+function getCameraPosition() {
+  return [...state.cameraPosition];
+}
+
+function getCameraTarget() {
+  const yaw = state.cameraYaw;
+  const pitch = state.cameraPitch;
+
+  const direction = [
+    Math.sin(yaw) * Math.cos(pitch),
+    Math.sin(pitch),
+    -Math.cos(yaw) * Math.cos(pitch),
+  ];
+
+  return [
+    state.cameraPosition[0] + direction[0],
+    state.cameraPosition[1] + direction[1],
+    state.cameraPosition[2] + direction[2],
+  ];
+}
+
+function resetCamera() {
+  state.cameraPosition[0] = CAMERA_DEFAULTS.position[0];
+  state.cameraPosition[1] = CAMERA_DEFAULTS.position[1];
+  state.cameraPosition[2] = CAMERA_DEFAULTS.position[2];
+
+  state.cameraYaw = CAMERA_DEFAULTS.yaw;
+  state.cameraPitch = CAMERA_DEFAULTS.pitch;
+
+  keepCameraInsideChapel();
 }
 
 // Crea cubi ? 
