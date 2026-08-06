@@ -20,14 +20,11 @@ const MIN_CAMERA_HEIGHT = 0.5;
 const MAX_CAMERA_HEIGHT = 3.0;
 
 // Per evitare che la camera esca dalla cappella
-const CAMERA_MARGIN = 0.35;
-
+const CAMERA_MARGIN = 0.15;
 const CHAPEL_MIN_X = -4.0 + CAMERA_MARGIN;
 const CHAPEL_MAX_X =  4.0 - CAMERA_MARGIN;
-
 const CHAPEL_MIN_Z = -7.0 + CAMERA_MARGIN;
 const CHAPEL_MAX_Z =  7.0 - CAMERA_MARGIN;
-
 const CAMERA_MIN_Y = 0.8;
 const CAMERA_MAX_Y = 3.8;
 
@@ -187,15 +184,7 @@ function updateKeyboardMovement(dt) {
     state.cameraPosition[0] += right[0] * step;
     state.cameraPosition[2] += right[2] * step;
   }
-
-  if (keys.KeyQ) {
-    state.cameraPosition[1] += verticalStep;
-  }
-
-  if (keys.KeyE) {
-    state.cameraPosition[1] -= verticalStep;
-  }
-
+  
   state.cameraPosition[1] = clamp(
     state.cameraPosition[1],
     MIN_CAMERA_HEIGHT,
