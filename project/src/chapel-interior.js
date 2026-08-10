@@ -1,6 +1,7 @@
 "use strict";
 
-function makePart(tx, ty, tz, sx, sy, sz, color, material = "white") {
+
+function makePart(tx, ty, tz, sx, sy, sz, color, material = "white",shape = "box", side = null) {
   return {
     t: [tx, ty, tz],
     s: [sx, sy, sz],
@@ -11,18 +12,6 @@ function makePart(tx, ty, tz, sx, sy, sz, color, material = "white") {
 
 function buildChapelParts() {
   const parts = [];
-
-  //const wallY = CHAPEL_DIMS.wallHeight / 2;
-  //const frontWallY = CHAPEL_DIMS.frontWallHeight / 2;
-  const columnY = COLUMN_DIMS.shaftHeight / 2;
-
-  const columnBaseY = COLUMN_DIMS.baseHeight / 2;
-  const columnCapY = COLUMN_DIMS.shaftHeight + COLUMN_DIMS.capHeight / 2;
-
-  //const holeLeft = 3 * (WINDOW_OPENING.centerX - WINDOW_OPENING.width / 2);
-  //const holeRight = 3 * (WINDOW_OPENING.centerX + WINDOW_OPENING.width / 2);
-  //const holeBottom = WINDOW_OPENING.centerY - WINDOW_OPENING.height / 2;
-  //const holeTop = WINDOW_OPENING.centerY + WINDOW_OPENING.height / 2;
 
   // Pedana altare
   parts.push(makePart(
@@ -150,78 +139,8 @@ function buildChapelParts() {
     ));
   }
 
-  // Colonne
-  for (const z of COLUMN_ROWS_Z) {
-    parts.push(makePart(
-      COLUMN_DIMS.xLeft,
-      columnY,
-      z,
-      COLUMN_DIMS.shaftSize,
-      COLUMN_DIMS.shaftHeight,
-      COLUMN_DIMS.shaftSize,
-      COLORS.columnShaft,
-      "col"
-    ));
-
-    parts.push(makePart(
-      COLUMN_DIMS.xRight,
-      columnY,
-      z,
-      COLUMN_DIMS.shaftSize,
-      COLUMN_DIMS.shaftHeight,
-      COLUMN_DIMS.shaftSize,
-      COLORS.columnShaft,
-      "col"
-    ));
-
-    parts.push(makePart(
-      COLUMN_DIMS.xLeft,
-      columnBaseY,
-      z,
-      COLUMN_DIMS.baseSize,
-      COLUMN_DIMS.baseHeight,
-      COLUMN_DIMS.baseSize,
-      COLORS.columnBase,
-      "col"
-    ));
-
-    parts.push(makePart(
-      COLUMN_DIMS.xRight,
-      columnBaseY,
-      z,
-      COLUMN_DIMS.baseSize,
-      COLUMN_DIMS.baseHeight,
-      COLUMN_DIMS.baseSize,
-      COLORS.columnBase,
-      "col"
-    ));
-
-    parts.push(makePart(
-      COLUMN_DIMS.xLeft,
-      columnCapY,
-      z,
-      COLUMN_DIMS.baseSize,
-      COLUMN_DIMS.capHeight,
-      COLUMN_DIMS.baseSize,
-      COLORS.columnBase,
-      "col"
-    ));
-
-    parts.push(makePart(
-      COLUMN_DIMS.xRight,
-      columnCapY,
-      z,
-      COLUMN_DIMS.baseSize,
-      COLUMN_DIMS.capHeight,
-      COLUMN_DIMS.baseSize,
-      COLORS.columnBase,
-      "col"
-    ));
-  }
-
   return parts;
 }
-
 
 function drawChapelParts(view, projection, cameraPosition, lightDirection) {
   if (!chapelPartsList || !boxBufferInfo) return;
@@ -229,6 +148,7 @@ function drawChapelParts(view, projection, cameraPosition, lightDirection) {
   gl.useProgram(programInfo.program);
 
   const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
+
   const effectiveLightIntensity = state.lightEnabled ? state.lightIntensity : 0.0;
 
   const commonUniformsBase = {
@@ -240,35 +160,53 @@ function drawChapelParts(view, projection, cameraPosition, lightDirection) {
     u_lightIntensity: effectiveLightIntensity,
   };
 
-  webglUtils.setBuffersAndAttributes(gl, programInfo, boxBufferInfo);
-
+  // Disegna panche, altare e altre parti cubiche
   for (const part of chapelPartsList) {
+    const bufferInfo = boxBufferInfo;
+
+    webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+
     let world = m4.identity();
+
     world = m4.translate(
       world,
       part.t[0],
       part.t[1],
       part.t[2]
     );
-    world = m4.scale(world, part.s[0], part.s[1], part.s[2]);
 
-    const worldInverseTranspose = m4.transpose(m4.inverse(world));
+    world = m4.scale(
+      world,
+      part.s[0],
+      part.s[1],
+      part.s[2]
+    );
+
+    const worldInverseTranspose =
+      m4.transpose(m4.inverse(world));
 
     let texture = window.wallTexture;
-    if (part.material === 'wood') {
+
+    if (part.material === "wood") {
       texture = window.woodTexture;
-    } else if (part.material === 'col') {
-      texture = window.columnTexture;
+    } else if (part.material === "white") {
+      texture = window.whiteTexture;
+    } else if (part.material === "floor") {
+      texture = window.floorTilesTexture;
     }
 
     webglUtils.setUniforms(programInfo, {
       ...commonUniformsBase,
       u_world: world,
-      u_worldInverseTranspose: worldInverseTranspose,
+      u_worldInverseTranspose:
+        worldInverseTranspose,
       u_colorMult: part.color,
       u_texture: texture,
     });
 
-    webglUtils.drawBufferInfo(gl, boxBufferInfo);
+    webglUtils.drawBufferInfo(gl, bufferInfo);
   }
+
+  // Disegna le colonne OBJ
+  drawColumnsOBJ(view, projection, cameraPosition, lightDirection );
 }

@@ -73,32 +73,6 @@ function loadTexture(gl, url) {
   });
 }
 
-/*
-// Calcola la posizione della camera orbitale a partire da yaw, pitch, distanza e target
-function getCameraPosition() {
-  const cp = Math.cos(state.cameraPitch);
-  const sp = Math.sin(state.cameraPitch);
-  const cy = Math.cos(state.cameraYaw);
-  const sy = Math.sin(state.cameraYaw);
-
-  const x = state.target[0] + state.cameraDist * cp * sy;
-  const y = state.target[1] + state.cameraDist * sp;
-  const z = state.target[2] + state.cameraDist * cp * cy;
-
-  return [x, y, z];
-}
-
-// Ripristina la camera ai valori iniziali definiti nei default
-function resetCamera() {
-  state.cameraYaw = CAMERA_DEFAULTS.yaw;
-  state.cameraPitch = CAMERA_DEFAULTS.pitch;
-  state.cameraDist = CAMERA_DEFAULTS.dist;
-  state.target[0] = CAMERA_DEFAULTS.target[0];
-  state.target[1] = CAMERA_DEFAULTS.target[1];
-  state.target[2] = CAMERA_DEFAULTS.target[2];
-}
-*/
-
 function getCameraPosition() {
   return [...state.cameraPosition];
 }

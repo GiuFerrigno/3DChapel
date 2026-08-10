@@ -64,16 +64,6 @@ let keys = {
 };
 
 // Furniture constants? 
-const COLUMN_DIMS = {
-  xLeft: -3.0,
-  xRight: 3.0,
-  shaftHeight: 3.4,
-  shaftSize: 0.32,
-  baseHeight: 0.16,
-  capHeight: 0.16,
-  baseSize: 0.46,
-};
-
 const ALTAR_DIMS = {
   platformY: 0.15,
   platformZ: -5.4,
@@ -118,7 +108,6 @@ const BENCH_DIMS = {
 };
 
 const BENCH_ROWS_Z = [3.8, 2.2, 0.6, -1.0, -2.6];
-const COLUMN_ROWS_Z = [4.5, 1.5, -1.5, -4.5];
 
 const COLORS = {
   floor: [1, 1, 1, 1],
@@ -134,3 +123,12 @@ const COLORS = {
   columnShaft: [0.78, 0.78, 0.80, 1],
   columnBase: [0.68, 0.68, 0.70, 1],
 };
+
+// Colonne
+const COLUMN_DIMS = {
+  xLeft: -4.45,
+  xRight: 4.45,
+  targetHeight: 6.55, 
+};
+
+const COLUMN_ROWS_Z = [7, 2.4, -2.4, -7]; 

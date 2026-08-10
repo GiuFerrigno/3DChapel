@@ -4,18 +4,21 @@ let chapelPartsList = null;
 let boxBufferInfo = null;
 
 function initProceduralChapelParts(gl) {
-  // 1. costruisci la lista di parti (panche, colonne, altare)
+  // 1. Costruisce la lista delle parti:
+  // panche, colonne, altare, ecc.
   chapelPartsList = buildChapelParts();
 
-  // 2. crea un box unitario (centarto) una volta sola
+  // 2. Crea il cubo unitario una sola volta
   if (!boxBufferInfo) {
-    const cubeArrays = createUnitCubeArrays();   // oppure tuo createBox
+    const cubeArrays = createUnitCubeArrays();
+
     boxBufferInfo = webglUtils.createBufferInfoFromArrays(gl, cubeArrays);
   }
+
 }
 
 async function initSceneGeometry(gl) {
-  await loadChapelMeshes(gl);   // cappella da OBJ
-  initProceduralChapelParts(gl); // panche + colonne procedurali
+  await loadChapelMeshes(gl);    // cappella da OBJ
+  initProceduralChapelParts(gl); // parti procedurali
+  await initColumnOBJ(gl);       // colonne da OBJ
 }
-

@@ -1,0 +1,12 @@
+# Blender 4.3.2 MTL File: 'col2.blend'
+# www.blender.org
+
+newmtl 10409_Doric_Column_v1_SG
+Ns 10.000005
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/giu/Desktop/10409_Doric_Column_L3.123c71cc2813-aa52-475c-bfe2-aa3bfdc66443/10409_Doric_Column_v1_difuse_SG.jpg
