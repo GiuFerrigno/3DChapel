@@ -228,3 +228,103 @@ function computeMeshBounds(mesh) {
     depth: maxZ - minZ,
   };
 }
+
+// Per il caricamento di diverse parti di un obj 
+function createBufferForGroup(gl, mesh, groupIndex) {
+  const positions = [];
+  const normals = [];
+  const texcoords = [];
+
+  for (let i = 1; i <= mesh.nface; i++) {
+    const face = mesh.face[i];
+
+    if (!face || face.group !== groupIndex) {
+      continue;
+    }
+
+    if (!face.vert || face.vert.length < 3) {
+      continue;
+    }
+
+    for (let k = 0; k < 3; k++) {
+      const vertexIndex = face.vert[k];
+      const vertex = mesh.vert[vertexIndex];
+
+      if (!vertex) {
+        continue;
+      }
+
+      positions.push(
+        vertex.x,
+        vertex.y,
+        vertex.z
+      );
+
+      let nx = 0;
+      let ny = 0;
+      let nz = 1;
+
+      const normalIndex =
+        face.normalVertexIndex &&
+        face.normalVertexIndex[k];
+
+      if (
+        normalIndex &&
+        mesh.normal &&
+        mesh.normal[normalIndex]
+      ) {
+        const normal = mesh.normal[normalIndex];
+
+        nx = normal.i;
+        ny = normal.j;
+        nz = normal.k;
+      } else if (
+        mesh.facetnorms &&
+        mesh.facetnorms[face.normalFaceIndex]
+      ) {
+        const normal =
+          mesh.facetnorms[face.normalFaceIndex];
+
+        nx = normal.i;
+        ny = normal.j;
+        nz = normal.k;
+      }
+
+      normals.push(nx, ny, nz);
+
+      const textureIndex =
+        face.textCoordsIndex &&
+        face.textCoordsIndex[k];
+
+      if (
+        textureIndex &&
+        mesh.textCoords &&
+        mesh.textCoords[textureIndex]
+      ) {
+        const uv = mesh.textCoords[textureIndex];
+
+        texcoords.push(
+          uv.u,
+          uv.v
+        );
+      } else {
+        texcoords.push(0.0, 0.0);
+      }
+    }
+  }
+
+  return webglUtils.createBufferInfoFromArrays(gl, {
+    position: {
+      numComponents: 3,
+      data: new Float32Array(positions),
+    },
+    normal: {
+      numComponents: 3,
+      data: new Float32Array(normals),
+    },
+    texcoord: {
+      numComponents: 2,
+      data: new Float32Array(texcoords),
+    },
+  });
+}

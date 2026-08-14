@@ -1,141 +1,61 @@
 "use strict";
 
-let plaqueObjBufferInfo = null;
-let plaqueObjReady = false;
-let plaqueObjBounds = null;
-
 const PLAQUE_OBJ_CONFIG = {
-  url: "../models/targa.obj",
+  objPath: "../models/targa.obj",
   position: [-3.25, -4, 9.6],
   rotationY: Math.PI / 2,
   scale: [1.0, 1.0, 1.0],
-  color: [1.0, 1.0, 1.0, 1.0],
-  texture: null,
-  heightOffset: 1.5,
+  offsetY: 1.5,
 };
 
-function createPlaqueArraysFromMesh(mesh) {
-  const positions = [];
-  const normals = [];
-  const texcoords = [];
+const plaqueParts = {
+  plaque: {
+    objName: "Targa",
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],
+  },
+  image: {
+    objName: "Immagine",
+    bufferInfo: null,
+    texture: null,
+    color: [1, 1, 1, 1],
+  },
+};
 
-  for (let i = 1; i <= mesh.nface; i++) {
-    const face = mesh.face[i];
+let plaqueBounds = null;
 
-    if (!face || !face.vert || face.vert.length < 3) {
-      continue;
-    }
 
-    // Triangolazione a ventaglio delle facce con più di tre vertici.
-    for (let k = 1; k < face.vert.length - 1; k++) {
-      const triangle = [0, k, k + 1];
+async function loadPlaqueMeshes(gl) {
+  const response = await fetch(PLAQUE_OBJ_CONFIG.objPath);
 
-      for (const corner of triangle) {
-        const vertex = mesh.vert[face.vert[corner]];
-        if (!vertex) continue;
-
-        positions.push(vertex.x, vertex.y, vertex.z);
-
-        const normalIndex = face.normalVertexIndex?.[corner];
-        const normal =
-          normalIndex && mesh.normal?.[normalIndex]
-            ? mesh.normal[normalIndex]
-            : mesh.facetnorms?.[face.normalFaceIndex];
-
-        if (normal) {
-          normals.push(normal.i, normal.j, normal.k);
-        } else {
-          normals.push(0, 1, 0);
-        }
-
-        const uvIndex = face.textCoordsIndex?.[corner];
-        const uv =
-          uvIndex && mesh.textCoords?.[uvIndex]
-            ? mesh.textCoords[uvIndex]
-            : null;
-
-        if (uv) {
-          texcoords.push(uv.u, uv.v);
-        } else {
-          texcoords.push(0.5, 0.5);
-        }
-      }
-    }
-  }
-
-  return {
-    position: {
-      numComponents: 3,
-      data: new Float32Array(positions),
-    },
-    normal: {
-      numComponents: 3,
-      data: new Float32Array(normals),
-    },
-    texcoord: {
-      numComponents: 2,
-      data: new Float32Array(texcoords),
-    },
-  };
-}
-
-async function initPlaqueOBJ(gl) {
-  const response = await fetch(PLAQUE_OBJ_CONFIG.url);
-
-  if (!response.ok) {
-    throw new Error(
-      `Impossibile caricare ${PLAQUE_OBJ_CONFIG.url}: HTTP ${response.status}`
-    );
-  }
-
-  const objText = await response.text();
+  const text = await response.text();
   const mesh = new subd_mesh();
 
-  glmReadOBJ(objText, mesh);
-
-  if (!mesh.normal || mesh.normal.length <= 1) {
-    FacetNormals(mesh);
-  }
-
-  // Mantiene lo stesso comportamento usato per la colonna.
+  glmReadOBJ(text, mesh);
   Unitize(mesh);
 
-  plaqueObjBounds = computeMeshBounds(mesh);
+  // Calcola i bounds dopo Unitize(), come per le colonne.
+  plaqueBounds = computeMeshBounds(mesh);
 
-  if (!plaqueObjBounds || plaqueObjBounds.width <= 0 || plaqueObjBounds.height <= 0 || plaqueObjBounds.depth <= 0) {
+  if (!plaqueBounds || plaqueBounds.width <= 0 || plaqueBounds.height <= 0 || plaqueBounds.depth <= 0) {
     throw new Error("Dimensioni OBJ della targa non valide");
   }
 
-  // Se impostata, ridimensiona la targa a una larghezza specifica.
-  if (window.PLAQUE_TARGET_WIDTH !== undefined) {
-    const uniformScale = window.PLAQUE_TARGET_WIDTH / plaqueObjBounds.width;
+  // Porta la base della targa a Y = 0 prima di applicare offsetY.
+  PLAQUE_OBJ_CONFIG.position[1] = -plaqueBounds.minY * PLAQUE_OBJ_CONFIG.scale[1] + PLAQUE_OBJ_CONFIG.offsetY;
 
-    PLAQUE_OBJ_CONFIG.scale = [
-      uniformScale,
-      uniformScale,
-      uniformScale,
-    ];
-  }
+  // Gruppi dell'OBJ:
+  // 1: Targa
+  // 2: Immagine
+  plaqueParts.plaque.bufferInfo = createBufferForGroup(gl, mesh, 1);
+  plaqueParts.image.bufferInfo = createBufferForGroup(gl, mesh, 2);
 
-  // Porta la base della targa a position[1].
-  PLAQUE_OBJ_CONFIG.position[1] = -plaqueObjBounds.minY * PLAQUE_OBJ_CONFIG.scale[1] + PLAQUE_OBJ_CONFIG.heightOffset;
-
-  const arrays = createPlaqueArraysFromMesh(mesh);
-
-  plaqueObjBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
-
-  plaqueObjReady = true;
-
-  console.log("Targa OBJ caricata");
-  console.log("Bounds:", plaqueObjBounds);
-  console.log("Scala:", PLAQUE_OBJ_CONFIG.scale);
-  console.log("Posizione:", PLAQUE_OBJ_CONFIG.position);
+  plaqueParts.plaque.texture = window.plaqueTexture 
+  plaqueParts.image.texture = window.photoTexture
 }
 
-function drawPlaqueOBJ(view, projection, cameraPosition, lightDirection) {
-
-  if (!plaqueObjReady || !plaqueObjBufferInfo) return;
-
+function getPlaqueWorld() {
   let world = m4.identity();
 
   world = m4.translate(
@@ -145,10 +65,7 @@ function drawPlaqueOBJ(view, projection, cameraPosition, lightDirection) {
     PLAQUE_OBJ_CONFIG.position[2]
   );
 
-  world = m4.yRotate(
-    world,
-    PLAQUE_OBJ_CONFIG.rotationY
-  );
+  world = m4.yRotate(world, PLAQUE_OBJ_CONFIG.rotationY);
 
   world = m4.scale(
     world,
@@ -157,32 +74,47 @@ function drawPlaqueOBJ(view, projection, cameraPosition, lightDirection) {
     PLAQUE_OBJ_CONFIG.scale[2]
   );
 
-  const worldInverseTranspose = m4.transpose(m4.inverse(world));
+  return world;
+}
+
+function drawPlaqueOBJ(view, projection, cameraPosition, lightDirection) {
+  const world = getPlaqueWorld();
+  const worldInverseTranspose = m4.transpose(
+    m4.inverse(world)
+  );
+
+  const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
+  const effectiveLightIntensity = state.lightEnabled ? state.lightIntensity : 0.0;
 
   gl.useProgram(programInfo.program);
 
-  webglUtils.setBuffersAndAttributes(gl, programInfo, plaqueObjBufferInfo);
-
-  const ambient = state.lightEnabled !== false ? state.ambient : 0.15;
-
-  const lightIntensity = state.lightEnabled !== false ? state.lightIntensity : 0.0;
-
-  PLAQUE_OBJ_CONFIG.texture = window.plaqueTexture
-
-  webglUtils.setUniforms(programInfo, {
+  const commonUniforms = {
     u_world: world,
     u_view: view,
     u_projection: projection,
     u_worldInverseTranspose: worldInverseTranspose,
     u_lightDirection: lightDirection,
     u_viewWorldPosition: cameraPosition,
-    u_colorMult: PLAQUE_OBJ_CONFIG.color,
-    u_texture: PLAQUE_OBJ_CONFIG.texture || window.whiteTexture,
-    u_ambient: ambient,
-    u_lightIntensity: lightIntensity,
-  });
+    u_ambient: effectiveAmbient,
+    u_lightIntensity: effectiveLightIntensity,
+  };
 
-  gl.disable(gl.CULL_FACE);
-  webglUtils.drawBufferInfo(gl, plaqueObjBufferInfo);
-  gl.enable(gl.CULL_FACE);
+  function drawPart(part) {
+    if (!part.bufferInfo || !part.texture) {
+      return;
+    }
+
+    webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
+
+    webglUtils.setUniforms(programInfo, {
+      ...commonUniforms,
+      u_colorMult: part.color,
+      u_texture: part.texture,
+    });
+
+    webglUtils.drawBufferInfo(gl, part.bufferInfo);
+  }
+
+  drawPart(plaqueParts.plaque);
+  drawPart(plaqueParts.image);
 }

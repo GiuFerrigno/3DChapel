@@ -92,57 +92,9 @@ async function loadChapelMeshes(gl) {
   chapelParts.walls.bufferInfo       = createBufferForGroup(gl, mesh, 4);
   chapelParts.door.bufferInfo        = createBufferForGroup(gl, mesh, 5);
   chapelParts.circWindow.bufferInfo  = createBufferForGroup(gl, mesh, 6);
-  chapelParts.window.bufferInfo= createBufferForGroup(gl, mesh, 7);
+  chapelParts.window.bufferInfo      = createBufferForGroup(gl, mesh, 7);
   chapelParts.windowLeft.bufferInfo  = createBufferForGroup(gl, mesh, 8);
   chapelParts.windowRight.bufferInfo = createBufferForGroup(gl, mesh, 9);
-}
-
-function createBufferForGroup(gl, mesh, groupIndex) {
-  const positions = [];
-  const normals   = [];
-  const texcoords = [];
-
-  for (let i = 1; i <= mesh.nface; i++) {
-    const face = mesh.face[i];
-
-    if (face.group !== groupIndex) continue;
-
-    for (let k = 0; k < 3; k++) {
-      const vi = face.vert[k];
-      const v  = mesh.vert[vi];
-      positions.push(v.x, v.y, v.z);
-
-      let nx = 0, ny = 0, nz = 1;
-      const ni = face.normalVertexIndex && face.normalVertexIndex[k];
-
-      if (ni && mesh.normal[ni]) {
-        nx = mesh.normal[ni].i;
-        ny = mesh.normal[ni].j;
-        nz = mesh.normal[ni].k;
-      } else if (mesh.facetnorms && mesh.facetnorms[face.normalFaceIndex]) {
-        nx = mesh.facetnorms[face.normalFaceIndex].i;
-        ny = mesh.facetnorms[face.normalFaceIndex].j;
-        nz = mesh.facetnorms[face.normalFaceIndex].k;
-      }
-
-      normals.push(nx, ny, nz);
-
-      const ti = face.textCoordsIndex && face.textCoordsIndex[k];
-      if (ti && mesh.textCoords && mesh.textCoords[ti]) {
-        texcoords.push(mesh.textCoords[ti].u, mesh.textCoords[ti].v);
-      } else {
-        texcoords.push(0.0, 0.0);
-      }
-    }
-  }
-
-  const arrays = {
-    position: { numComponents: 3, data: new Float32Array(positions) },
-    normal:   { numComponents: 3, data: new Float32Array(normals) },
-    texcoord: { numComponents: 2, data: new Float32Array(texcoords) },
-  };
-
-  return webglUtils.createBufferInfoFromArrays(gl, arrays);
 }
 
 function getChapelWorld() {

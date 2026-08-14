@@ -12,6 +12,7 @@ const TEXTURE_PATHS = {
   door: "../textures/door.jpg",
   ceiling: "../textures/ceiling.jpg",
   plaque: "../textures/targa.png",
+  photo: "../textures/foto_mia.jpg",
 };
 
 const TEXTURE_DEFAULTS = {
@@ -88,6 +89,7 @@ async function loadSceneTextures(gl) {
   window.doorTexture = loadTexturePOT(gl, TEXTURE_PATHS.door, TEXTURE_DEFAULTS.potSize);
   window.ceilingTexture = loadTexturePOT(gl, TEXTURE_PATHS.ceiling, TEXTURE_DEFAULTS.potSize);
   window.plaqueTexture = loadTexturePOT(gl, TEXTURE_PATHS.plaque, TEXTURE_DEFAULTS.potSize);
+  window.photoTexture = loadTexturePOT(gl, TEXTURE_PATHS.photo, TEXTURE_DEFAULTS.potSize);
 
   window.meshTexture = window.wallTexture;
 
