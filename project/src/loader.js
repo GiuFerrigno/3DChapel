@@ -11,6 +11,7 @@ const TEXTURE_PATHS = {
   simpleGlass: "../textures/stained-glass-simple.png", 
   door: "../textures/door.jpg",
   ceiling: "../textures/ceiling.jpg",
+  plaque: "../textures/targa.png",
 };
 
 const TEXTURE_DEFAULTS = {
@@ -86,6 +87,7 @@ async function loadSceneTextures(gl) {
   window.simpleWindowTexture = loadTexturePOT(gl, TEXTURE_PATHS.simpleGlass, TEXTURE_DEFAULTS.potSize);
   window.doorTexture = loadTexturePOT(gl, TEXTURE_PATHS.door, TEXTURE_DEFAULTS.potSize);
   window.ceilingTexture = loadTexturePOT(gl, TEXTURE_PATHS.ceiling, TEXTURE_DEFAULTS.potSize);
+  window.plaqueTexture = loadTexturePOT(gl, TEXTURE_PATHS.plaque, TEXTURE_DEFAULTS.potSize);
 
   window.meshTexture = window.wallTexture;
 
@@ -94,8 +96,8 @@ async function loadSceneTextures(gl) {
   // Texture cappella
   chapelParts.roofCurved.texture      = window.ceilingTexture;         
   chapelParts.floor.texture           = window.floorTilesTexture;
-  chapelParts.walls.texture           = window.wallTexture;          // da cercare
-  chapelParts.roof.texture            = window.wallTexture;          // da cercare 
+  chapelParts.walls.texture           = window.wallTexture;         
+  chapelParts.roof.texture            = window.wallTexture;         
   chapelParts.door.texture            = window.doorTexture           
   chapelParts.window.texture          = window.windowTexture;
   chapelParts.windowLeft.texture      = window.simpleWindowTexture;

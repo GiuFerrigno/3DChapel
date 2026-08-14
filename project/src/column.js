@@ -20,44 +20,6 @@ function getColumnPosition(x, z) {
   ];
 }
 
-
-function computeColumnBounds(mesh) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let minZ = Infinity;
-
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  let maxZ = -Infinity;
-
-  for (let i = 1; i <= mesh.nvert; i++) {
-    const vertex = mesh.vert[i];
-
-    if (!vertex) continue;
-
-    minX = Math.min(minX, vertex.x);
-    minY = Math.min(minY, vertex.y);
-    minZ = Math.min(minZ, vertex.z);
-
-    maxX = Math.max(maxX, vertex.x);
-    maxY = Math.max(maxY, vertex.y);
-    maxZ = Math.max(maxZ, vertex.z);
-  }
-
-  return {
-    minX,
-    minY,
-    minZ,
-    maxX,
-    maxY,
-    maxZ,
-
-    width: maxX - minX,
-    height: maxY - minY,
-    depth: maxZ - minZ,
-  };
-}
-
 // Converte la mesh OBJ nei buffer utilizzabili da WebGL
 function createColumnArraysFromMesh(mesh) {
   const positions = [];
@@ -171,13 +133,9 @@ async function initColumnOBJ(gl) {
   Unitize(mesh);
 
   // Calcola le dimensioni reali dopo Unitize
-  columnObjBounds =
-    computeColumnBounds(mesh);
+  columnObjBounds = computeMeshBounds(mesh);
 
-  if (
-    !columnObjBounds ||
-    columnObjBounds.height <= 0
-  ) {
+  if (!columnObjBounds || columnObjBounds.height <= 0) {
     throw new Error(
       "Altezza OBJ non valida"
     );
@@ -199,18 +157,12 @@ async function initColumnOBJ(gl) {
   ];
 
   // Porta il punto più basso dell'OBJ a Y = 0
-  COLUMN_OBJ_CONFIG.positionY =
-    -columnObjBounds.minY *
-    uniformScale;
+  COLUMN_OBJ_CONFIG.positionY = -columnObjBounds.minY * uniformScale;
 
   const arrays =
     createColumnArraysFromMesh(mesh);
 
-  columnObjBufferInfo =
-    webglUtils.createBufferInfoFromArrays(
-      gl,
-      arrays
-    );
+  columnObjBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
 
   columnObjReady = true;
 

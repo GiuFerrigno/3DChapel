@@ -192,3 +192,39 @@ function createUnitCubeArrays() {
     indices:  { numComponents: 3, data: new Uint16Array(indices) },
   };
 }
+
+
+// Calcola i limiti della geometria di una mesh OBJ.
+// Funziona per qualsiasi altra mesh che utilizzi mesh.vert e mesh.nvert.
+function computeMeshBounds(mesh) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let minZ = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let maxZ = -Infinity;
+
+  for (let i = 1; i <= mesh.nvert; i++) {
+    const vertex = mesh.vert[i];
+    if (!vertex) continue;
+
+    minX = Math.min(minX, vertex.x);
+    minY = Math.min(minY, vertex.y);
+    minZ = Math.min(minZ, vertex.z);
+    maxX = Math.max(maxX, vertex.x);
+    maxY = Math.max(maxY, vertex.y);
+    maxZ = Math.max(maxZ, vertex.z);
+  }
+
+  return {
+    minX,
+    minY,
+    minZ,
+    maxX,
+    maxY,
+    maxZ,
+    width: maxX - minX,
+    height: maxY - minY,
+    depth: maxZ - minZ,
+  };
+}

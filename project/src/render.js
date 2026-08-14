@@ -21,4 +21,5 @@ async function initSceneGeometry(gl) {
   await loadChapelMeshes(gl);    // cappella da OBJ
   initProceduralChapelParts(gl); // parti procedurali
   await initColumnOBJ(gl);       // colonne da OBJ
+  await initPlaqueOBJ(gl);       // targa da OBJ
 }

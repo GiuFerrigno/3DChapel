@@ -209,4 +209,7 @@ function drawChapelParts(view, projection, cameraPosition, lightDirection) {
 
   // Disegna le colonne OBJ
   drawColumnsOBJ(view, projection, cameraPosition, lightDirection );
+
+  // Disegna targa
+  drawPlaqueOBJ(view, projection, cameraPosition, lightDirection);
 }
