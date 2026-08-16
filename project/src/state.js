@@ -12,11 +12,7 @@ const CAMERA_DEFAULTS = {
 
 // Light defaults
 const LIGHT_DEFAULTS = {
-  direction: [0.0, 1.0, 0.0],
-  intensity: 1.2,
   ambient: 0.25,
-  enabled: true,
-  sunAngle: 0.9, 
 };
 
 // Window effect defaults
@@ -33,15 +29,10 @@ const state = {
 
   // Scene / animation
   meshYaw: 0,
-  animateSun: true,
   useTexture: true,
 
   // Light
-  lightDirection: LIGHT_DEFAULTS.direction,
   ambient: LIGHT_DEFAULTS.ambient,
-  lightIntensity: LIGHT_DEFAULTS.intensity,
-  lightEnabled: LIGHT_DEFAULTS.enabled,
-  sunAngle: LIGHT_DEFAULTS.sunAngle,
 
   // Window effect
   // Non usato al momento 

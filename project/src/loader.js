@@ -100,7 +100,7 @@ async function loadSceneTextures(gl) {
   chapelParts.floor.texture           = window.floorTilesTexture;
   chapelParts.walls.texture           = window.wallTexture;         
   chapelParts.roof.texture            = window.wallTexture;         
-  chapelParts.door.texture            = window.doorTexture           
+  chapelParts.door.texture            = window.doorTexture;           
   chapelParts.window.texture          = window.windowTexture;
   chapelParts.windowLeft.texture      = window.simpleWindowTexture;
   chapelParts.windowRight.texture     = window.simpleWindowTexture;

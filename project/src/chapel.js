@@ -121,10 +121,9 @@ function getChapelWorld() {
   return world;
 }
 
-function drawChapel(view, projection, cameraPosition, lightDirection) {
+function drawChapel(view, projection, cameraPosition) {
   const world = getChapelWorld();
   const worldInverseTranspose = m4.transpose(m4.inverse(world));
-
   const candleLight = state.candles.light;
 
   gl.useProgram(programInfo.program);
@@ -134,14 +133,11 @@ function drawChapel(view, projection, cameraPosition, lightDirection) {
     u_view: view,
     u_projection: projection,
     u_worldInverseTranspose: worldInverseTranspose,
-
     u_viewWorldPosition: cameraPosition,
-
     u_pointLightPosition: candleLight.position,
     u_pointLightColor: candleLight.color,
     u_pointLightIntensity: candleLight.intensity,
     u_pointLightRadius: candleLight.radius,
-
     u_ambient: 0.03,
     u_lightIntensity: 0.0,
   };
@@ -177,8 +173,21 @@ function drawChapel(view, projection, cameraPosition, lightDirection) {
   drawPart(chapelParts.roof);
   drawPart(chapelParts.roofCurved);
   drawPart(chapelParts.door);
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(
+    gl.SRC_ALPHA,
+    gl.ONE_MINUS_SRC_ALPHA
+  );
+  gl.depthMask(false);
+  gl.disable(gl.CULL_FACE);
+
   drawPart(chapelParts.window);
   drawPart(chapelParts.windowLeft);
   drawPart(chapelParts.windowRight);
   drawPart(chapelParts.circWindow);
+
+  gl.enable(gl.CULL_FACE);
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
 }

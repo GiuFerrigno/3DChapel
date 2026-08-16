@@ -142,31 +142,49 @@ function buildChapelParts() {
   return parts;
 }
 
-function drawChapelParts(view, projection, cameraPosition, lightDirection) {
-  if (!chapelPartsList || !boxBufferInfo) return;
+function drawChapelParts(view, projection, cameraPosition) {
+  if (!chapelPartsList || !boxBufferInfo) {
+    return;
+  }
 
   gl.useProgram(programInfo.program);
 
-  const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
-
-  const effectiveLightIntensity = state.lightEnabled ? state.lightIntensity : 0.0;
+  const candleLight =
+    state.candles.light;
 
   const commonUniformsBase = {
     u_view: view,
     u_projection: projection,
-    u_lightDirection: lightDirection,
     u_viewWorldPosition: cameraPosition,
-    u_ambient: effectiveAmbient,
-    u_lightIntensity: effectiveLightIntensity,
+
+    u_pointLightPosition:
+      candleLight.position,
+
+    u_pointLightColor:
+      candleLight.color,
+
+    u_pointLightIntensity:
+      candleLight.intensity,
+
+    u_pointLightRadius:
+      candleLight.radius,
+
+    u_ambient: 0.03,
+    u_lightIntensity: 0.0,
   };
 
-  // Disegna panche, altare e altre parti cubiche
   for (const part of chapelPartsList) {
-    const bufferInfo = boxBufferInfo;
+    const bufferInfo =
+      boxBufferInfo;
 
-    webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+    webglUtils.setBuffersAndAttributes(
+      gl,
+      programInfo,
+      bufferInfo
+    );
 
-    let world = m4.identity();
+    let world =
+      m4.identity();
 
     world = m4.translate(
       world,
@@ -183,33 +201,42 @@ function drawChapelParts(view, projection, cameraPosition, lightDirection) {
     );
 
     const worldInverseTranspose =
-      m4.transpose(m4.inverse(world));
+      m4.transpose(
+        m4.inverse(world)
+      );
 
-    let texture = window.wallTexture;
+    let texture =
+      window.wallTexture;
 
     if (part.material === "wood") {
-      texture = window.woodTexture;
+      texture =
+        window.woodTexture;
     } else if (part.material === "white") {
-      texture = window.whiteTexture;
+      texture =
+        window.whiteTexture;
     } else if (part.material === "floor") {
-      texture = window.floorTilesTexture;
+      texture =
+        window.floorTilesTexture;
     }
 
-    webglUtils.setUniforms(programInfo, {
-      ...commonUniformsBase,
-      u_world: world,
-      u_worldInverseTranspose:
-        worldInverseTranspose,
-      u_colorMult: part.color,
-      u_texture: texture,
-    });
+    webglUtils.setUniforms(
+      programInfo,
+      {
+        ...commonUniformsBase,
+        u_world: world,
+        u_worldInverseTranspose:
+          worldInverseTranspose,
+        u_colorMult: part.color,
+        u_texture: texture,
+      }
+    );
 
-    webglUtils.drawBufferInfo(gl, bufferInfo);
+    webglUtils.drawBufferInfo(
+      gl,
+      bufferInfo
+    );
   }
 
-  // Disegna le colonne OBJ
-  drawColumnsOBJ(view, projection, cameraPosition, lightDirection );
-
-  // Disegna targa
-  drawPlaqueOBJ(view, projection, cameraPosition, lightDirection);
+  drawColumnsOBJ(view, projection, cameraPosition);
+  drawPlaqueOBJ(view, projection, cameraPosition);
 }

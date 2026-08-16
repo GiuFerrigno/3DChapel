@@ -169,23 +169,23 @@ async function initColumnOBJ(gl) {
 
 
 // Disegna le colonne nella scena
-function drawColumnsOBJ(view, projection, cameraPosition, lightDirection) {
+function drawColumnsOBJ(view, projection, cameraPosition) {
   if (!columnObjReady || !columnObjBufferInfo) return; 
 
   for (const z of COLUMN_ROWS_Z) {
     //Colonne sinistre
     drawColumnOBJAt(
-      getColumnPosition(COLUMN_DIMS.xLeft, z), Math.PI, view, projection, cameraPosition, lightDirection);
+      getColumnPosition(COLUMN_DIMS.xLeft, z), Math.PI, view, projection, cameraPosition);
 
     //Colonne destre
     drawColumnOBJAt(
-      getColumnPosition(COLUMN_DIMS.xRight, z), 0.0, view, projection, cameraPosition, lightDirection);
+      getColumnPosition(COLUMN_DIMS.xRight, z), 0.0, view, projection, cameraPosition);
   }
 }
 
 
 //OBJ 
-function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition, lightDirection) {
+function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition) {
   if (!columnObjReady || !columnObjBufferInfo) return;
 
   let world = m4.identity();
@@ -214,12 +214,18 @@ function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition, 
       m4.inverse(world)
     );
 
-  gl.useProgram(programInfo.program);
+  const candleLight =
+    state.candles.light;
 
-  webglUtils.setBuffersAndAttributes(gl, programInfo, columnObjBufferInfo);
+  gl.useProgram(
+    programInfo.program
+  );
 
-  const ambient = state.lightEnabled !== false ? state.ambient : 0.15;
-  const lightIntensity = state.lightEnabled !== false ? state.lightIntensity : 0.0;
+  webglUtils.setBuffersAndAttributes(
+    gl,
+    programInfo,
+    columnObjBufferInfo
+  );
 
   webglUtils.setUniforms(
     programInfo,
@@ -227,19 +233,46 @@ function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition, 
       u_world: world,
       u_view: view,
       u_projection: projection,
-      u_worldInverseTranspose: worldInverseTranspose,
-      u_lightDirection: lightDirection,
-      u_viewWorldPosition: cameraPosition,
-      u_colorMult: COLUMN_OBJ_CONFIG.color,
-      u_texture: window.columnTexture || window.whiteTexture,
-      u_ambient: ambient,
-      u_lightIntensity: lightIntensity,
+      u_worldInverseTranspose:
+        worldInverseTranspose,
+
+      u_viewWorldPosition:
+        cameraPosition,
+
+      u_pointLightPosition:
+        candleLight.position,
+
+      u_pointLightColor:
+        candleLight.color,
+
+      u_pointLightIntensity:
+        candleLight.intensity,
+
+      u_pointLightRadius:
+        candleLight.radius,
+
+      u_colorMult:
+        COLUMN_OBJ_CONFIG.color,
+
+      u_texture:
+        window.columnTexture ||
+        window.whiteTexture,
+
+      u_ambient: 0.03,
+      u_lightIntensity: 0.0,
     }
   );
 
-  gl.disable(gl.CULL_FACE);
+  gl.disable(
+    gl.CULL_FACE
+  );
 
-  webglUtils.drawBufferInfo(gl, columnObjBufferInfo);
+  webglUtils.drawBufferInfo(
+    gl,
+    columnObjBufferInfo
+  );
 
-  gl.enable(gl.CULL_FACE);
+  gl.enable(
+    gl.CULL_FACE
+  );
 }

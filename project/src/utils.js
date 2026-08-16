@@ -1,13 +1,5 @@
 "use strict";
 
-function getLightDirection() {
-  const x = Math.cos(state.sunAngle) * 0.4;
-  const y = 1.0;
-  const z = -0.8;
-
-  return m4.normalize([x, y, z]);
-}
-
 // Limita un valore tra un minimo e un massimo
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));

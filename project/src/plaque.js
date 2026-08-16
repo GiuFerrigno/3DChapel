@@ -77,14 +77,13 @@ function getPlaqueWorld() {
   return world;
 }
 
-function drawPlaqueOBJ(view, projection, cameraPosition, lightDirection) {
+function drawPlaqueOBJ(view, projection, cameraPosition) {
   const world = getPlaqueWorld();
-  const worldInverseTranspose = m4.transpose(
-    m4.inverse(world)
-  );
 
-  const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
-  const effectiveLightIntensity = state.lightEnabled ? state.lightIntensity : 0.0;
+  const worldInverseTranspose =
+    m4.transpose(
+      m4.inverse(world)
+    );
 
   gl.useProgram(programInfo.program);
 
@@ -92,27 +91,49 @@ function drawPlaqueOBJ(view, projection, cameraPosition, lightDirection) {
     u_world: world,
     u_view: view,
     u_projection: projection,
-    u_worldInverseTranspose: worldInverseTranspose,
-    u_lightDirection: lightDirection,
-    u_viewWorldPosition: cameraPosition,
-    u_ambient: effectiveAmbient,
-    u_lightIntensity: effectiveLightIntensity,
+    u_worldInverseTranspose:
+      worldInverseTranspose,
+
+    u_ambient:
+      state.ambient,
+
+    u_pointLightPosition:
+      state.candles.light.position,
+
+    u_pointLightIntensity:
+      state.candles.light.intensity,
+
+    u_pointLightRadius:
+      state.candles.light.radius,
   };
 
   function drawPart(part) {
-    if (!part.bufferInfo || !part.texture) {
+    if (
+      !part.bufferInfo ||
+      !part.texture
+    ) {
       return;
     }
 
-    webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
+    webglUtils.setBuffersAndAttributes(
+      gl,
+      programInfo,
+      part.bufferInfo
+    );
 
-    webglUtils.setUniforms(programInfo, {
-      ...commonUniforms,
-      u_colorMult: part.color,
-      u_texture: part.texture,
-    });
+    webglUtils.setUniforms(
+      programInfo,
+      {
+        ...commonUniforms,
+        u_colorMult: part.color,
+        u_texture: part.texture,
+      }
+    );
 
-    webglUtils.drawBufferInfo(gl, part.bufferInfo);
+    webglUtils.drawBufferInfo(
+      gl,
+      part.bufferInfo
+    );
   }
 
   drawPart(plaqueParts.plaque);

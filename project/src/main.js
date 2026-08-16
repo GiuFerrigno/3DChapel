@@ -19,10 +19,13 @@ varying vec2 v_texcoord;
 
 void main() {
   vec4 worldPosition = u_world * a_position;
+
   gl_Position = u_projection * u_view * worldPosition;
 
   v_worldPosition = worldPosition.xyz;
+
   v_normal = mat3(u_worldInverseTranspose) * a_normal;
+
   v_texcoord = a_texcoord;
 }
 `;
@@ -34,15 +37,11 @@ varying vec3 v_normal;
 varying vec3 v_worldPosition;
 varying vec2 v_texcoord;
 
-uniform vec3 u_lightDirection;
-uniform vec3 u_viewWorldPosition;
 uniform vec4 u_colorMult;
 uniform sampler2D u_texture;
 uniform float u_ambient;
-uniform float u_lightIntensity;
 
 uniform vec3 u_pointLightPosition;
-uniform vec3 u_pointLightColor;
 uniform float u_pointLightIntensity;
 uniform float u_pointLightRadius;
 
@@ -50,26 +49,24 @@ void main() {
   vec3 normal = normalize(v_normal);
 
   vec3 toLight = u_pointLightPosition - v_worldPosition;
-  
+
   float distanceToLight = length(toLight);
-  
+
   vec3 lightDir = normalize(toLight);
 
-  float diffuse =
-    max(
-      dot(normal, lightDir),
-      0.0
-    );
+  float diffuse = max(dot(normal, lightDir), 0.0);
 
   float attenuation =
-    1.0 / (
+    1.0 /
+    (
       1.0 +
       distanceToLight /
-        u_pointLightRadius +
-      (distanceToLight *
-      distanceToLight) /
-        (u_pointLightRadius *
-        u_pointLightRadius)
+      u_pointLightRadius +
+      (distanceToLight * distanceToLight) /
+      (
+        u_pointLightRadius *
+        u_pointLightRadius
+      )
     );
 
   float light =
@@ -77,8 +74,6 @@ void main() {
     diffuse *
     u_pointLightIntensity *
     attenuation;
-
-  
 
   vec4 texColor =
     texture2D(
@@ -90,6 +85,10 @@ void main() {
     texColor *
     u_colorMult;
 
+  if (baseColor.a < 0.05) {
+    discard;
+  }
+
   gl_FragColor =
     vec4(
       baseColor.rgb * light,
@@ -97,6 +96,7 @@ void main() {
     );
 }
 `;
+
 function setupGUI() {
   gui = new dat.GUI();
 
@@ -107,12 +107,10 @@ function setupGUI() {
   cameraFolder.add(state, "cameraPitch", -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05, 0.0).name("Look up/down");
   cameraFolder.add(state.cameraPosition, "1", 0.5, 3.0, 0.05).name("Eye height");
   
-  const lightFolder = gui.addFolder("Light");
-  //lightFolder.add(state, "lightDirection", 0.0, 6.28, 0.01).name("Light direction");
+  const lightFolder = gui.addFolder("Point light");
   lightFolder.add(state, "ambient", 0.0, 1.0, 0.01).name("Ambient");
-  lightFolder.add(state, "lightIntensity", 0.0, 2.0, 0.01).name("Diffuse");
-  lightFolder.add(state, "animateSun").name("Sun animation");
-  lightFolder.add(state, "lightEnabled").name("Light enabled");
+  lightFolder.add(state.candles.light, "intensity", 0.0, 8.0, 0.01).name("Intensity");
+  lightFolder.add(state.candles.light, "radius", 0.5, 20.0, 0.1).name("Radius");
   lightFolder.add(state.candles, "enabled").name("Candles");
 
   const effectsFolder = gui.addFolder("Effects");
@@ -138,10 +136,6 @@ function render(time) {
   const dt = Math.min(time - lastTime, 0.033);
   lastTime = time;
 
-  if (state.animateSun) {
-    state.sunAngle = time * 0.25;
-  }
-
   updateKeyboardMovement(dt);
   updateCandles(time);          
  
@@ -162,11 +156,9 @@ function render(time) {
 
   const view = m4.inverse(camera);
 
-  const lightDirection = getLightDirection();
-
-  drawChapel(view, projection, cameraPosition, lightDirection);
-  drawChapelParts(view, projection, cameraPosition, lightDirection);
-  drawCandles(view, projection, cameraPosition, lightDirection);
+  drawChapel(view, projection, cameraPosition);
+  drawChapelParts(view, projection, cameraPosition);
+  drawCandles(view, projection, cameraPosition);
 
   requestAnimationFrame(render);
 }
