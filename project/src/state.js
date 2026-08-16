@@ -12,10 +12,11 @@ const CAMERA_DEFAULTS = {
 
 // Light defaults
 const LIGHT_DEFAULTS = {
-  sunAngle: 0.9,
-  ambient: 0.60,
-  intensity: 0.85,
+  direction: [0.0, 1.0, 0.0],
+  intensity: 1.2,
+  ambient: 0.25,
   enabled: true,
+  sunAngle: 0.9, 
 };
 
 // Window effect defaults
@@ -36,14 +37,39 @@ const state = {
   useTexture: true,
 
   // Light
-  sunAngle: LIGHT_DEFAULTS.sunAngle,
+  lightDirection: LIGHT_DEFAULTS.direction,
   ambient: LIGHT_DEFAULTS.ambient,
   lightIntensity: LIGHT_DEFAULTS.intensity,
   lightEnabled: LIGHT_DEFAULTS.enabled,
+  sunAngle: LIGHT_DEFAULTS.sunAngle,
 
   // Window effect
   // Non usato al momento 
   showWindowEffect: WINDOW_EFFECT_DEFAULTS.visible,
+
+  candles: {
+    enabled: true,
+    positions: [
+      [-0.45, 1.35, -5.4],
+      [0.0, 1.35, -5.4],
+      [0.45, 1.35, -5.4],
+    ],
+
+    candleScale: [0.12, 0.45, 0.12],
+    flameScale: [0.10, 0.22, 0.10],
+
+    animate: true,
+    time: 0.0, 
+    speed: 1.0, 
+
+    light: {
+      position: [0.0, 1.85, -5.4],
+      color: [1.0, 0.42, 0.08],
+      intensity: 3.0,
+      radius: 7.0,
+    },
+
+  },
 
 };
 

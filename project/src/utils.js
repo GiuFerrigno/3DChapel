@@ -1,5 +1,13 @@
 "use strict";
 
+function getLightDirection() {
+  const x = Math.cos(state.sunAngle) * 0.4;
+  const y = 1.0;
+  const z = -0.8;
+
+  return m4.normalize([x, y, z]);
+}
+
 // Limita un valore tra un minimo e un massimo
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -229,6 +237,96 @@ function computeMeshBounds(mesh) {
   };
 }
 
+// Uguale alla precedente ma solo per un gruppo anzichè per tutta la mesh
+// Non utilizzato
+function computeGroupBounds(mesh, groupIndex) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let minZ = Infinity;
+
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let maxZ = -Infinity;
+
+  for (let i = 1; i <= mesh.nface; i++) {
+    const face =
+      mesh.face[i];
+
+    if (
+      !face ||
+      face.group !== groupIndex ||
+      !face.vert
+    ) {
+      continue;
+    }
+
+    for (
+      let k = 0;
+      k < face.vert.length;
+      k++
+    ) {
+      const vertex =
+        mesh.vert[face.vert[k]];
+
+      if (!vertex) {
+        continue;
+      }
+
+      minX = Math.min(
+        minX,
+        vertex.x
+      );
+
+      minY = Math.min(
+        minY,
+        vertex.y
+      );
+
+      minZ = Math.min(
+        minZ,
+        vertex.z
+      );
+
+      maxX = Math.max(
+        maxX,
+        vertex.x
+      );
+
+      maxY = Math.max(
+        maxY,
+        vertex.y
+      );
+
+      maxZ = Math.max(
+        maxZ,
+        vertex.z
+      );
+    }
+  }
+
+  return {
+    minX,
+    minY,
+    minZ,
+    maxX,
+    maxY,
+    maxZ,
+
+    width: maxX - minX,
+    height: maxY - minY,
+    depth: maxZ - minZ,
+  };
+}
+
+// Dai bound si ottiene il centro 
+function getBoundsCenter(bounds) {
+  return [
+    (bounds.minX + bounds.maxX) * 0.5,
+    (bounds.minY + bounds.maxY) * 0.5,
+    (bounds.minZ + bounds.maxZ) * 0.5,
+  ];
+}
+
 // Per il caricamento di diverse parti di un obj 
 function createBufferForGroup(gl, mesh, groupIndex) {
   const positions = [];
@@ -238,17 +336,20 @@ function createBufferForGroup(gl, mesh, groupIndex) {
   for (let i = 1; i <= mesh.nface; i++) {
     const face = mesh.face[i];
 
-    if (!face || face.group !== groupIndex) {
-      continue;
-    }
+    if (!face || face.group !== groupIndex) continue;
 
-    if (!face.vert || face.vert.length < 3) {
-      continue;
-    }
+    if (!face.vert || face.vert.length < 3) continue;
 
-    for (let k = 0; k < 3; k++) {
-      const vertexIndex = face.vert[k];
-      const vertex = mesh.vert[vertexIndex];
+    for (
+      let k = 0;
+      k < 3;
+      k++
+    ) {
+      const vertexIndex =
+        face.vert[k];
+
+      const vertex =
+        mesh.vert[vertexIndex];
 
       if (!vertex) {
         continue;
@@ -273,24 +374,33 @@ function createBufferForGroup(gl, mesh, groupIndex) {
         mesh.normal &&
         mesh.normal[normalIndex]
       ) {
-        const normal = mesh.normal[normalIndex];
+        const normal =
+          mesh.normal[normalIndex];
 
         nx = normal.i;
         ny = normal.j;
         nz = normal.k;
       } else if (
         mesh.facetnorms &&
-        mesh.facetnorms[face.normalFaceIndex]
+        mesh.facetnorms[
+          face.normalFaceIndex
+        ]
       ) {
         const normal =
-          mesh.facetnorms[face.normalFaceIndex];
+          mesh.facetnorms[
+            face.normalFaceIndex
+          ];
 
         nx = normal.i;
         ny = normal.j;
         nz = normal.k;
       }
 
-      normals.push(nx, ny, nz);
+      normals.push(
+        nx,
+        ny,
+        nz
+      );
 
       const textureIndex =
         face.textCoordsIndex &&
@@ -301,30 +411,50 @@ function createBufferForGroup(gl, mesh, groupIndex) {
         mesh.textCoords &&
         mesh.textCoords[textureIndex]
       ) {
-        const uv = mesh.textCoords[textureIndex];
+        const uv =
+          mesh.textCoords[
+            textureIndex
+          ];
 
         texcoords.push(
           uv.u,
           uv.v
         );
       } else {
-        texcoords.push(0.0, 0.0);
+        texcoords.push(
+          0.0,
+          0.0
+        );
       }
     }
   }
 
-  return webglUtils.createBufferInfoFromArrays(gl, {
-    position: {
-      numComponents: 3,
-      data: new Float32Array(positions),
-    },
-    normal: {
-      numComponents: 3,
-      data: new Float32Array(normals),
-    },
-    texcoord: {
-      numComponents: 2,
-      data: new Float32Array(texcoords),
-    },
-  });
+  const positionData =
+    new Float32Array(positions);
+
+  const bufferInfo =
+    webglUtils.createBufferInfoFromArrays(
+      gl,
+      {
+        position: {
+          numComponents: 3,
+          data: positionData,
+        },
+
+        normal: {
+          numComponents: 3,
+          data: new Float32Array(normals),
+        },
+
+        texcoord: {
+          numComponents: 2,
+          data: new Float32Array(texcoords),
+        },
+      }
+    );
+
+  bufferInfo.positions =
+    positionData;
+
+  return bufferInfo;
 }

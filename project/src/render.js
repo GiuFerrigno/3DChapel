@@ -3,6 +3,11 @@
 let chapelPartsList = null;
 let boxBufferInfo = null;
 
+/*
+let candleBufferInfo = null;
+let flameBufferInfo = null;
+*/
+
 function initProceduralChapelParts(gl) {
   // 1. Costruisce la lista delle parti:
   // panche, colonne, altare, ecc.
@@ -22,4 +27,6 @@ async function initSceneGeometry(gl) {
   initProceduralChapelParts(gl); // parti procedurali
   await initColumnOBJ(gl);       // colonne da OBJ
   await loadPlaqueMeshes(gl);    // targa da OBJ
+  initCandles(gl);
 }
+

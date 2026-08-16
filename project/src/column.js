@@ -165,14 +165,6 @@ async function initColumnOBJ(gl) {
   columnObjBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
 
   columnObjReady = true;
-
-  console.log("Colonna OBJ caricata");
-  console.log("Bounds:", columnObjBounds);
-  console.log("Scala:", uniformScale);
-  console.log(
-    "Posizione Y:",
-    COLUMN_OBJ_CONFIG.positionY
-  );
 }
 
 
@@ -227,7 +219,6 @@ function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition, 
   webglUtils.setBuffersAndAttributes(gl, programInfo, columnObjBufferInfo);
 
   const ambient = state.lightEnabled !== false ? state.ambient : 0.15;
-
   const lightIntensity = state.lightEnabled !== false ? state.lightIntensity : 0.0;
 
   webglUtils.setUniforms(
@@ -236,19 +227,11 @@ function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition, 
       u_world: world,
       u_view: view,
       u_projection: projection,
-      u_worldInverseTranspose:
-        worldInverseTranspose,
-
+      u_worldInverseTranspose: worldInverseTranspose,
       u_lightDirection: lightDirection,
       u_viewWorldPosition: cameraPosition,
-
-      u_colorMult:
-        COLUMN_OBJ_CONFIG.color,
-
-      u_texture:
-        window.columnTexture ||
-        window.whiteTexture,
-
+      u_colorMult: COLUMN_OBJ_CONFIG.color,
+      u_texture: window.columnTexture || window.whiteTexture,
       u_ambient: ambient,
       u_lightIntensity: lightIntensity,
     }

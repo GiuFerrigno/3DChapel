@@ -41,26 +41,62 @@ uniform sampler2D u_texture;
 uniform float u_ambient;
 uniform float u_lightIntensity;
 
+uniform vec3 u_pointLightPosition;
+uniform vec3 u_pointLightColor;
+uniform float u_pointLightIntensity;
+uniform float u_pointLightRadius;
+
 void main() {
   vec3 normal = normalize(v_normal);
-  vec3 lightDir = normalize(-u_lightDirection);
-  vec3 viewDir = normalize(u_viewWorldPosition - v_worldPosition);
-  vec3 halfVec = normalize(lightDir + viewDir);
 
-  float diffuse = max(dot(normal, lightDir), 0.0);
-  float spec = pow(max(dot(normal, halfVec), 0.0), 24.0) * 0.18;
+  vec3 toLight = u_pointLightPosition - v_worldPosition;
+  
+  float distanceToLight = length(toLight);
+  
+  vec3 lightDir = normalize(toLight);
 
-  float light = u_ambient + diffuse * u_lightIntensity;
-  light = clamp(light, 0.0, 1.0);
+  float diffuse =
+    max(
+      dot(normal, lightDir),
+      0.0
+    );
 
-  vec4 texColor = texture2D(u_texture, v_texcoord);
-  vec4 baseColor = texColor * u_colorMult;
+  float attenuation =
+    1.0 / (
+      1.0 +
+      distanceToLight /
+        u_pointLightRadius +
+      (distanceToLight *
+      distanceToLight) /
+        (u_pointLightRadius *
+        u_pointLightRadius)
+    );
 
-  vec3 finalColor = baseColor.rgb * light + spec;
-  gl_FragColor = vec4(finalColor, baseColor.a);
+  float light =
+    u_ambient +
+    diffuse *
+    u_pointLightIntensity *
+    attenuation;
+
+  
+
+  vec4 texColor =
+    texture2D(
+      u_texture,
+      v_texcoord
+    );
+
+  vec4 baseColor =
+    texColor *
+    u_colorMult;
+
+  gl_FragColor =
+    vec4(
+      baseColor.rgb * light,
+      baseColor.a
+    );
 }
 `;
-
 function setupGUI() {
   gui = new dat.GUI();
 
@@ -72,14 +108,16 @@ function setupGUI() {
   cameraFolder.add(state.cameraPosition, "1", 0.5, 3.0, 0.05).name("Eye height");
   
   const lightFolder = gui.addFolder("Light");
-  lightFolder.add(state, "sunAngle", 0.0, 6.28, 0.01).name("Sun angle");
+  //lightFolder.add(state, "lightDirection", 0.0, 6.28, 0.01).name("Light direction");
   lightFolder.add(state, "ambient", 0.0, 1.0, 0.01).name("Ambient");
   lightFolder.add(state, "lightIntensity", 0.0, 2.0, 0.01).name("Diffuse");
   lightFolder.add(state, "animateSun").name("Sun animation");
   lightFolder.add(state, "lightEnabled").name("Light enabled");
+  lightFolder.add(state.candles, "enabled").name("Candles");
 
   const effectsFolder = gui.addFolder("Effects");
-  effectsFolder.add(state, "showWindowEffect").name("Show window effect");
+  effectsFolder.add(state.candles, "animate" ).name("Flames animation");
+  effectsFolder.add(state.candles, "speed", 0.2, 3.0, 0.1).name("Speed");
 
   const guiActions = {
     resetCamera() {
@@ -95,13 +133,6 @@ function resizeCanvas() {
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 }
 
-function getLightDirection() {
-  const x = Math.cos(state.sunAngle);
-  const y = 1.0;
-  const z = Math.sin(state.sunAngle);
-  return m4.normalize([x, y, z]);
-}
-
 function render(time) {
   time *= 0.001;
   const dt = Math.min(time - lastTime, 0.033);
@@ -112,7 +143,8 @@ function render(time) {
   }
 
   updateKeyboardMovement(dt);
-
+  updateCandles(time);          
+ 
   resizeCanvas();
 
   gl.enable(gl.DEPTH_TEST);
@@ -134,6 +166,7 @@ function render(time) {
 
   drawChapel(view, projection, cameraPosition, lightDirection);
   drawChapelParts(view, projection, cameraPosition, lightDirection);
+  drawCandles(view, projection, cameraPosition, lightDirection);
 
   requestAnimationFrame(render);
 }

@@ -125,8 +125,7 @@ function drawChapel(view, projection, cameraPosition, lightDirection) {
   const world = getChapelWorld();
   const worldInverseTranspose = m4.transpose(m4.inverse(world));
 
-  const effectiveAmbient = state.lightEnabled ? state.ambient : 0.15;
-  const effectiveLightIntensity = state.lightEnabled ? state.lightIntensity : 0.0;
+  const candleLight = state.candles.light;
 
   gl.useProgram(programInfo.program);
 
@@ -135,22 +134,42 @@ function drawChapel(view, projection, cameraPosition, lightDirection) {
     u_view: view,
     u_projection: projection,
     u_worldInverseTranspose: worldInverseTranspose,
-    u_lightDirection: lightDirection,
+
     u_viewWorldPosition: cameraPosition,
-    u_ambient: effectiveAmbient,
-    u_lightIntensity: effectiveLightIntensity,
+
+    u_pointLightPosition: candleLight.position,
+    u_pointLightColor: candleLight.color,
+    u_pointLightIntensity: candleLight.intensity,
+    u_pointLightRadius: candleLight.radius,
+
+    u_ambient: 0.03,
+    u_lightIntensity: 0.0,
   };
 
   function drawPart(part) {
-    if (!part.bufferInfo || !part.texture) return;
+    if (!part.bufferInfo || !part.texture) {
+      return;
+    }
 
-    webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
-    webglUtils.setUniforms(programInfo, {
-      ...commonUniforms,
-      u_colorMult: part.color,
-      u_texture: part.texture,
-    });
-    webglUtils.drawBufferInfo(gl, part.bufferInfo);
+    webglUtils.setBuffersAndAttributes(
+      gl,
+      programInfo,
+      part.bufferInfo
+    );
+
+    webglUtils.setUniforms(
+      programInfo,
+      {
+        ...commonUniforms,
+        u_colorMult: part.color,
+        u_texture: part.texture,
+      }
+    );
+
+    webglUtils.drawBufferInfo(
+      gl,
+      part.bufferInfo
+    );
   }
 
   drawPart(chapelParts.floor);
