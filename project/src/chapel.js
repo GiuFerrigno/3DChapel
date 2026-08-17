@@ -174,6 +174,8 @@ function drawChapel(view, projection, cameraPosition) {
   drawPart(chapelParts.roofCurved);
   drawPart(chapelParts.door);
 
+// TODO: Capire questa cosa della trasparenza
+  /*
   gl.enable(gl.BLEND);
   gl.blendFunc(
     gl.SRC_ALPHA,
@@ -181,13 +183,16 @@ function drawChapel(view, projection, cameraPosition) {
   );
   gl.depthMask(false);
   gl.disable(gl.CULL_FACE);
+  */
 
   drawPart(chapelParts.window);
   drawPart(chapelParts.windowLeft);
   drawPart(chapelParts.windowRight);
   drawPart(chapelParts.circWindow);
 
+  /*
   gl.enable(gl.CULL_FACE);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
+  */
 }
