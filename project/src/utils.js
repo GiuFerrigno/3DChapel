@@ -193,6 +193,211 @@ function createUnitCubeArrays() {
   };
 }
 
+// Buffer Info per cilindro 
+function createCylinderBufferInfo(
+  gl,
+  radius = 0.5,
+  height = 1.0,
+  segments = 20
+) {
+  const positions = [];
+  const normals = [];
+  const texcoords = [];
+  const indices = [];
+
+  const halfHeight =
+    height * 0.5;
+
+  for (
+    let i = 0;
+    i < segments;
+    ++i
+  ) {
+    const angle =
+      i / segments *
+      Math.PI * 2;
+
+    const x =
+      Math.cos(angle);
+
+    const z =
+      Math.sin(angle);
+
+    const u =
+      i / segments;
+
+    positions.push(
+      radius * x,
+      -halfHeight,
+      radius * z
+    );
+
+    normals.push(
+      x,
+      0,
+      z
+    );
+
+    texcoords.push(
+      u,
+      0
+    );
+
+    positions.push(
+      radius * x,
+      halfHeight,
+      radius * z
+    );
+
+    normals.push(
+      x,
+      0,
+      z
+    );
+
+    texcoords.push(
+      u,
+      1
+    );
+  }
+
+  for (
+    let i = 0;
+    i < segments;
+    ++i
+  ) {
+    const next =
+      (i + 1) % segments;
+
+    const bottom =
+      i * 2;
+
+    const top =
+      bottom + 1;
+
+    const nextBottom =
+      next * 2;
+
+    const nextTop =
+      nextBottom + 1;
+
+    indices.push(
+      bottom,
+      nextBottom,
+      top
+    );
+
+    indices.push(
+      nextBottom,
+      nextTop,
+      top
+    );
+  }
+
+  const bottomCenter =
+    positions.length / 3;
+
+  positions.push(
+    0,
+    -halfHeight,
+    0
+  );
+
+  normals.push(
+    0,
+    -1,
+    0
+  );
+
+  texcoords.push(
+    0.5,
+    0.5
+  );
+
+  const topCenter =
+    bottomCenter + 1;
+
+  positions.push(
+    0,
+    halfHeight,
+    0
+  );
+
+  normals.push(
+    0,
+    1,
+    0
+  );
+
+  texcoords.push(
+    0.5,
+    0.5
+  );
+
+  for (
+    let i = 0;
+    i < segments;
+    ++i
+  ) {
+    const next =
+      (i + 1) % segments;
+
+    const bottom =
+      i * 2;
+
+    const nextBottom =
+      next * 2;
+
+    indices.push(
+      bottomCenter,
+      nextBottom,
+      bottom
+    );
+
+    const top =
+      i * 2 + 1;
+
+    const nextTop =
+      next * 2 + 1;
+
+    indices.push(
+      topCenter,
+      top,
+      nextTop
+    );
+  }
+
+  return webglUtils.createBufferInfoFromArrays(
+    gl,
+    {
+      position: {
+        numComponents: 3,
+        data: new Float32Array(
+          positions
+        ),
+      },
+
+      normal: {
+        numComponents: 3,
+        data: new Float32Array(
+          normals
+        ),
+      },
+
+      texcoord: {
+        numComponents: 2,
+        data: new Float32Array(
+          texcoords
+        ),
+      },
+
+      indices: new Uint16Array(
+        indices
+      ),
+    }
+  );
+}
+
 
 // Calcola i limiti della geometria di una mesh OBJ.
 // Funziona per qualsiasi altra mesh che utilizzi mesh.vert e mesh.nvert.
@@ -227,96 +432,6 @@ function computeMeshBounds(mesh) {
     height: maxY - minY,
     depth: maxZ - minZ,
   };
-}
-
-// Uguale alla precedente ma solo per un gruppo anzichè per tutta la mesh
-// Non utilizzato
-function computeGroupBounds(mesh, groupIndex) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let minZ = Infinity;
-
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  let maxZ = -Infinity;
-
-  for (let i = 1; i <= mesh.nface; i++) {
-    const face =
-      mesh.face[i];
-
-    if (
-      !face ||
-      face.group !== groupIndex ||
-      !face.vert
-    ) {
-      continue;
-    }
-
-    for (
-      let k = 0;
-      k < face.vert.length;
-      k++
-    ) {
-      const vertex =
-        mesh.vert[face.vert[k]];
-
-      if (!vertex) {
-        continue;
-      }
-
-      minX = Math.min(
-        minX,
-        vertex.x
-      );
-
-      minY = Math.min(
-        minY,
-        vertex.y
-      );
-
-      minZ = Math.min(
-        minZ,
-        vertex.z
-      );
-
-      maxX = Math.max(
-        maxX,
-        vertex.x
-      );
-
-      maxY = Math.max(
-        maxY,
-        vertex.y
-      );
-
-      maxZ = Math.max(
-        maxZ,
-        vertex.z
-      );
-    }
-  }
-
-  return {
-    minX,
-    minY,
-    minZ,
-    maxX,
-    maxY,
-    maxZ,
-
-    width: maxX - minX,
-    height: maxY - minY,
-    depth: maxZ - minZ,
-  };
-}
-
-// Dai bound si ottiene il centro 
-function getBoundsCenter(bounds) {
-  return [
-    (bounds.minX + bounds.maxX) * 0.5,
-    (bounds.minY + bounds.maxY) * 0.5,
-    (bounds.minZ + bounds.maxZ) * 0.5,
-  ];
 }
 
 // Per il caricamento di diverse parti di un obj 

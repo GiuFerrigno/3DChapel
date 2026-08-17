@@ -49,6 +49,9 @@ const state = {
     candleScale: [0.12, 0.45, 0.12],
     flameScale: [0.10, 0.22, 0.10],
 
+    wickHeight: 0.075,
+    wickRadius: 0.018, 
+
     animate: true,
     time: 0.0, 
     speed: 1.0, 
