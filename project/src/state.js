@@ -65,6 +65,14 @@ const state = {
       radius: 7.0,
     },
 
+    smoke: {
+      enabled: true,
+      count: 5,
+      speed: 0.30,
+      color: [0.15, 0.13, 0.10, 1.0],
+      size: 0.10,
+    },
+
   },
 
 };

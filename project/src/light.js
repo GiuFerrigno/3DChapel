@@ -3,6 +3,7 @@
 let candleBufferInfo = null;
 let flameBufferInfo = null;
 let wickBufferInfo = null;
+let smokeBufferInfo = null;
 
 
 function initCandles(gl){
@@ -10,6 +11,7 @@ function initCandles(gl){
   candleBufferInfo = createCylinderBufferInfo(gl, 0.5, 1.0, 20);
   flameBufferInfo = createFlameBufferInfo(gl, 16);
   wickBufferInfo = createCylinderBufferInfo(gl, 0.5, 1.0, 8);
+  smokeBufferInfo = createSmokeBufferInfo(gl, 12);  
 }
 
 function updateCandles(time) {
@@ -289,6 +291,77 @@ function createFlameBufferInfo(gl, segments = 16) {
   );
 }
 
+function createSmokeBufferInfo(gl, segments = 16) {
+  const positions = [];
+  const normals = [];
+  const texcoords = [];
+  const indices = [];
+
+  const rings = [
+    { y: 0.00, rx: 0.10, rz: 0.08, ox: 0.00 },
+    { y: 0.08, rx: 0.18, rz: 0.14, ox: 0.01 },
+    { y: 0.18, rx: 0.25, rz: 0.20, ox: -0.02 },
+    { y: 0.30, rx: 0.30, rz: 0.23, ox: 0.03 },
+    { y: 0.42, rx: 0.22, rz: 0.18, ox: 0.06 },
+    { y: 0.53, rx: 0.12, rz: 0.10, ox: 0.02 },
+  ];
+
+  for (let r = 0; r < rings.length; ++r) {
+    const ring = rings[r];
+
+    for (let i = 0; i < segments; ++i) {
+      const angle = i / segments * Math.PI * 2;
+      const x = Math.cos(angle);
+      const z = Math.sin(angle);
+
+      positions.push(ring.ox + x * ring.rx, ring.y, z * ring.rz);
+      normals.push(x, 0.5, z);
+      texcoords.push(i / segments, ring.y);
+    }
+  }
+
+  for (let r = 0; r < rings.length - 1; ++r) {
+    for (let i = 0; i < segments; ++i) {
+      const next = (i + 1) % segments;
+      const a = r * segments + i;
+      const b = r * segments + next;
+      const c = (r + 1) * segments + i;
+      const d = (r + 1) * segments + next;
+
+      indices.push(a, b, c, b, d, c);
+    }
+  }
+
+  const bottomCenter = positions.length / 3;
+  positions.push(0, 0, 0);
+  normals.push(0, -1, 0);
+  texcoords.push(0.5, 0.0);
+
+  for (let i = 0; i < segments; ++i) {
+    const next = (i + 1) % segments;
+    indices.push(bottomCenter, next, i);
+  }
+
+  const topCenter = positions.length / 3;
+  positions.push(0.04, 0.58, 0);
+  normals.push(0, 1, 0);
+  texcoords.push(0.5, 1.0);
+
+  const lastRing = (rings.length - 1) * segments;
+
+  for (let i = 0; i < segments; ++i) {
+    const next = (i + 1) % segments;
+    indices.push(lastRing + i, lastRing + next, topCenter);
+  }
+
+  return webglUtils.createBufferInfoFromArrays(gl, {
+    position: { numComponents: 3, data: new Float32Array(positions) },
+    normal: { numComponents: 3, data: new Float32Array(normals) },
+    texcoord: { numComponents: 2, data: new Float32Array(texcoords) },
+    indices: new Uint16Array(indices),
+  });
+}
+
 function drawCandleUnlit(bufferInfo, world, view, projection, color, emissionStrength) {
   const program = candleProgramInfo;
   gl.useProgram(program.program);
@@ -300,6 +373,20 @@ function drawCandleUnlit(bufferInfo, world, view, projection, color, emissionStr
     u_colorMult: color,
     u_texture: window.whiteTexture,
     u_emissionStrength: emissionStrength,
+  });
+  webglUtils.drawBufferInfo(gl, bufferInfo);
+}
+
+function drawSmokeUnlit(bufferInfo, world, view, projection, color) {
+  gl.useProgram(candleProgramInfo.program);
+  webglUtils.setBuffersAndAttributes(gl, candleProgramInfo, bufferInfo);
+  webglUtils.setUniforms(candleProgramInfo, {
+    u_world: world,
+    u_view: view,
+    u_projection: projection,
+    u_colorMult: color,
+    u_texture: window.whiteTexture,
+    u_emissionStrength: 1.0,
   });
   webglUtils.drawBufferInfo(gl, bufferInfo);
 }
@@ -321,6 +408,7 @@ function drawCandles(view, projection, cameraPosition, lightDirection) {
 
     drawWick(i, p, candleScale, view, projection, cameraPosition, lightDirection);
     drawFlame(i, p, candleScale, view, projection, cameraPosition, lightDirection);
+    drawSmoke(i, p, candleScale, view, projection, cameraPosition);
   }
 }
 
@@ -375,4 +463,35 @@ function drawWick(index, candlePosition, candleScale, view, projection, cameraPo
     [0.025, 0.012, 0.006, 1.0],
     1.0
   );
+}
+
+function drawSmoke(index, candlePosition, candleScale, view, projection, cameraPosition) {
+  if (!state.candles.smoke.enabled) return;
+
+  const smoke = state.candles.smoke;
+  const time = state.candles.time;
+  const topY = candlePosition[1] + candleScale[1] * 0.5 + 0.14;
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.depthMask(false);
+
+  for (let i = 0; i < smoke.count; ++i) {
+    const phase = index * 2.3 + i * 1.8;
+    const life = (time * smoke.speed + i * 0.23 + index * 0.11) % 1.0;
+    const rise = life * 0.55;
+    const swayX = 0.05 * Math.sin(time * 1.2 + phase + life * 4.0);
+    const swayZ = 0.025 * Math.cos(time * 1.0 + phase + life * 3.0);
+    const size = smoke.size * (0.55 + life * 0.9);
+    const alpha = (1.0 - life) * 0.18;
+
+    let smokeWorld = m4.identity();
+    smokeWorld = m4.translate(smokeWorld, candlePosition[0] + swayX, topY + rise, candlePosition[2] + swayZ);
+    smokeWorld = m4.scale(smokeWorld, size, size * 1.2, size);
+
+    drawSmokeUnlit(smokeBufferInfo, smokeWorld, view, projection, [smoke.color[0], smoke.color[1], smoke.color[2], alpha]);
+  }
+
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
 }
