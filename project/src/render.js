@@ -23,5 +23,6 @@ async function initSceneGeometry(gl) {
   await initColumnOBJ(gl);       // colonne da OBJ
   await loadPlaqueMeshes(gl);    // targa da OBJ
   initCandles(gl);
+  initDust(gl, state.dust.count);
 }
 

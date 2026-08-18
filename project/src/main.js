@@ -160,6 +160,7 @@ function render(time) {
   drawChapel(view, projection, cameraPosition);
   drawChapelParts(view, projection, cameraPosition);
   drawCandles(view, projection, cameraPosition);
+  drawDust(view, projection, time);
 
   requestAnimationFrame(render);
 }
@@ -174,7 +175,7 @@ async function main() {
   }
 
   programInfo = webglUtils.createProgramInfo(gl, [vs, fs]);
-  
+
   candleProgramInfo = webglUtils.createProgramInfo(gl, [candleVS, candleFS]);
 
   await loadSceneTextures(gl);

@@ -75,6 +75,11 @@ const state = {
 
   },
 
+  dust: {
+    enabled: true,
+    count: 70,
+  },
+
 };
 
 // Input state
