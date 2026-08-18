@@ -88,13 +88,13 @@ async function loadChapelMeshes(gl) {
 
   chapelParts.roofCurved.bufferInfo  = createBufferForGroup(gl, mesh, 1);
   chapelParts.floor.bufferInfo       = createBufferForGroup(gl, mesh, 2);
-  chapelParts.roof.bufferInfo        = createBufferForGroup(gl, mesh, 3);
-  chapelParts.walls.bufferInfo       = createBufferForGroup(gl, mesh, 4);
-  chapelParts.door.bufferInfo        = createBufferForGroup(gl, mesh, 5);
-  chapelParts.circWindow.bufferInfo  = createBufferForGroup(gl, mesh, 6);
-  chapelParts.window.bufferInfo      = createBufferForGroup(gl, mesh, 7);
-  chapelParts.windowLeft.bufferInfo  = createBufferForGroup(gl, mesh, 8);
-  chapelParts.windowRight.bufferInfo = createBufferForGroup(gl, mesh, 9);
+  chapelParts.roof.bufferInfo        = createBufferForGroup(gl, mesh, 9);
+  chapelParts.walls.bufferInfo       = createBufferForGroup(gl, mesh, 3);
+  chapelParts.door.bufferInfo        = createBufferForGroup(gl, mesh, 4);
+  chapelParts.circWindow.bufferInfo  = createBufferForGroup(gl, mesh, 5);
+  chapelParts.window.bufferInfo      = createBufferForGroup(gl, mesh, 6);
+  chapelParts.windowLeft.bufferInfo  = createBufferForGroup(gl, mesh, 7);
+  chapelParts.windowRight.bufferInfo = createBufferForGroup(gl, mesh, 8);
 }
 
 function getChapelWorld() {
