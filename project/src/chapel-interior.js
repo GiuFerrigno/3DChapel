@@ -169,7 +169,7 @@ function drawChapelParts(view, projection, cameraPosition) {
     u_pointLightRadius:
       candleLight.radius,
 
-    u_ambient: 0.03,
+    u_ambient: state.ambient,
     u_lightIntensity: 0.0,
   };
 

@@ -138,20 +138,14 @@ function drawChapel(view, projection, cameraPosition) {
     u_pointLightColor: candleLight.color,
     u_pointLightIntensity: candleLight.intensity,
     u_pointLightRadius: candleLight.radius,
-    u_ambient: 0.03,
+    u_ambient: state.ambient,
     u_lightIntensity: 0.0,
   };
 
   function drawPart(part) {
-    if (!part.bufferInfo || !part.texture) {
-      return;
-    }
+    if (!part.bufferInfo || !part.texture) return;
 
-    webglUtils.setBuffersAndAttributes(
-      gl,
-      programInfo,
-      part.bufferInfo
-    );
+    webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
 
     webglUtils.setUniforms(
       programInfo,
@@ -162,10 +156,7 @@ function drawChapel(view, projection, cameraPosition) {
       }
     );
 
-    webglUtils.drawBufferInfo(
-      gl,
-      part.bufferInfo
-    );
+    webglUtils.drawBufferInfo(gl, part.bufferInfo);
   }
 
   drawPart(chapelParts.floor);
@@ -174,7 +165,7 @@ function drawChapel(view, projection, cameraPosition) {
   drawPart(chapelParts.roofCurved);
   drawPart(chapelParts.door);
 
-// TODO: Capire questa cosa della trasparenza
+  // Trasparenza solo per le finestre
   gl.enable(gl.BLEND);
   gl.blendFunc(
     gl.SRC_ALPHA,

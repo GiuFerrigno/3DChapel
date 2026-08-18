@@ -258,7 +258,7 @@ function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition) 
         window.columnTexture ||
         window.whiteTexture,
 
-      u_ambient: 0.03,
+      u_ambient: state.ambient,
       u_lightIntensity: 0.0,
     }
   );

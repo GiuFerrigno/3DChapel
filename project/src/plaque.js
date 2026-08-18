@@ -94,8 +94,7 @@ function drawPlaqueOBJ(view, projection, cameraPosition) {
     u_worldInverseTranspose:
       worldInverseTranspose,
 
-    u_ambient:
-      state.ambient,
+    u_ambient: state.ambient,
 
     u_pointLightPosition:
       state.candles.light.position,
@@ -108,18 +107,9 @@ function drawPlaqueOBJ(view, projection, cameraPosition) {
   };
 
   function drawPart(part) {
-    if (
-      !part.bufferInfo ||
-      !part.texture
-    ) {
-      return;
-    }
+    if (!part.bufferInfo || !part.texture) return;
 
-    webglUtils.setBuffersAndAttributes(
-      gl,
-      programInfo,
-      part.bufferInfo
-    );
+    webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
 
     webglUtils.setUniforms(
       programInfo,
@@ -130,10 +120,7 @@ function drawPlaqueOBJ(view, projection, cameraPosition) {
       }
     );
 
-    webglUtils.drawBufferInfo(
-      gl,
-      part.bufferInfo
-    );
+    webglUtils.drawBufferInfo(gl, part.bufferInfo);
   }
 
   drawPart(plaqueParts.plaque);

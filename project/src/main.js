@@ -61,7 +61,7 @@ void main() {
   vec4 baseColor = texture2D(u_texture, v_texcoord) * u_colorMult;
 
   if (baseColor.a < 0.05) discard;
-  
+
   gl_FragColor = vec4(baseColor.rgb * lightColor, baseColor.a);
 }
 `;
@@ -78,7 +78,7 @@ function setupGUI() {
   
   const lightFolder = gui.addFolder("Point light");
   lightFolder.add(state, "ambient", 0.0, 1.0, 0.01).name("Ambient");
-  lightFolder.add(state.candles.light, "intensity", 0.0, 8.0, 0.01).name("Intensity");
+  lightFolder.add(state.candles.light, "baseIntensity", 0.0, 8.0, 0.01).name("Intensity");
   lightFolder.add(state.candles.light, "radius", 0.5, 20.0, 0.1).name("Radius");
   lightFolder.add(state.candles, "enabled").name("Candles");
 

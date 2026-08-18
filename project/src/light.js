@@ -13,34 +13,32 @@ function initCandles(gl){
 }
 
 function updateCandles(time) {
-  if (!state.candles.animate) return;
-
   const speed = state.candles.speed || 1.0;
-
-  const flameMotion = Math.sin(time * 3.0 * speed);
-
-  const smallVariation = Math.sin(time * 5.0 * speed);
-
-  const flicker = 1.0 + 0.08 * flameMotion + 0.03 * smallVariation;
-
   state.candles.time = time;
 
-  state.candles.flicker = flicker;
+  if (!state.candles.animate) {
+    state.candles.flicker = 1.0;
+    state.candles.light.intensity = state.candles.light.baseIntensity;
+    return;
+  }
 
-  state.candles.light.intensity = 3.0 * flicker;
+  const flameMotion = Math.sin(time * 3.0 * speed);
+  const smallVariation = Math.sin(time * 5.0 * speed);
+  const flicker = 1.0 + 0.08 * flameMotion + 0.03 * smallVariation;
+
+  state.candles.flicker = flicker;
+  state.candles.light.intensity = state.candles.light.baseIntensity * flicker;
 }
 
 function getCandleLightUniforms() {
   const light = state.candles.light;
-  const position = getCandleWorldPosition(light.localPosition);
 
   return {
-    u_pointLightPosition: position,
+    u_pointLightPosition: light.position,
     u_pointLightColor: light.color,
     u_pointLightIntensity: light.intensity,
     u_pointLightRadius: light.radius,
-    u_ambient: 0.03,
-    u_lightIntensity: 0.0,
+    u_ambient: state.ambient,
   };
 }
 
@@ -330,28 +328,17 @@ function drawCandles(view, projection, cameraPosition, lightDirection) {
       candleBufferInfo
     );
 
-    webglUtils.setUniforms(
-      programInfo,
-      {
-        u_world: candleWorld,
-        u_view: view,
-        u_projection: projection,
-        u_worldInverseTranspose: candleInverseTranspose,
-        u_viewWorldPosition: cameraPosition,
-
-        u_colorMult: [
-          0.95,
-          0.85,
-          0.65,
-          1.0,
-        ],
-
-        u_texture: window.whiteTexture,
-
-        u_ambient: 1.0,
-        u_lightIntensity: 0.0,
-      }
-    );
+    webglUtils.setUniforms(programInfo, {
+      u_world: candleWorld,
+      u_view: view,
+      u_projection: projection,
+      u_worldInverseTranspose: candleInverseTranspose,
+      u_viewWorldPosition: cameraPosition,
+      u_colorMult: [1.0, 0.78, 0.42, 1.0],
+      u_texture: window.whiteTexture,
+      u_emissionStrength: 0.12,
+      ...getCandleLightUniforms(),
+    });
 
     webglUtils.drawBufferInfo(gl, candleBufferInfo);
 
@@ -420,56 +407,25 @@ function drawFlame(index, candlePosition, candleScale, view, projection, cameraP
 
   webglUtils.setBuffersAndAttributes(gl, programInfo, flameBufferInfo);
 
-  webglUtils.setUniforms(
-    programInfo,
-    {
-      u_world: flameWorld,
-      u_view: view,
-      u_projection: projection,
+  webglUtils.setUniforms(programInfo, {
+    u_world: flameWorld,
+    u_view: view,
+    u_projection: projection,
+    u_worldInverseTranspose: flameInverseTranspose,
+    u_viewWorldPosition: cameraPosition,
+    u_colorMult: [1.0, 0.55, 0.08, 1.0],
+    u_texture: window.whiteTexture,
+    u_emissionStrength: 1.2,
+    ...getCandleLightUniforms(),
+  });
 
-      u_worldInverseTranspose:
-        flameInverseTranspose,
-
-      u_viewWorldPosition:
-        cameraPosition,
-
-      u_colorMult: [
-        1.0,
-        0.55,
-        0.08,
-        1.0,
-      ],
-
-      u_texture:
-        window.whiteTexture,
-
-      u_ambient: 1.0,
-      u_lightIntensity: 0.0,
-    }
-  );
-
-  webglUtils.drawBufferInfo(
-    gl,
-    flameBufferInfo
-  );
+  webglUtils.drawBufferInfo(gl, flameBufferInfo);
 }
 
-function drawWick(
-  index,
-  candlePosition,
-  candleScale,
-  view,
-  projection,
-  cameraPosition,
-  lightDirection
-) {
-  const wickHeight =
-    state.candles.wickHeight ??
-    0.075;
+function drawWick(index, candlePosition, candleScale, view, projection, cameraPosition, lightDirection) {
+  const wickHeight = state.candles.wickHeight ?? 0.075;
 
-  const wickRadius =
-    state.candles.wickRadius ??
-    0.018;
+  const wickRadius = state.candles.wickRadius ?? 0.018;
 
   // Il cilindro della candela è centrato
   // su candlePosition[1].
@@ -518,33 +474,16 @@ function drawWick(
     wickBufferInfo
   );
 
-  webglUtils.setUniforms(
-    programInfo,
-    {
-      u_world: wickWorld,
-      u_view: view,
-      u_projection: projection,
+  webglUtils.setUniforms(programInfo, {
+    u_world: wickWorld,
+    u_view: view,
+    u_projection: projection,
+    u_worldInverseTranspose: wickInverseTranspose,
+    u_colorMult: [0.025, 0.012, 0.006, 1.0],
+    u_texture: window.whiteTexture,
+    u_emissionStrength: 0.0,
+    ...getCandleLightUniforms(),
+  });
 
-      u_worldInverseTranspose:
-        wickInverseTranspose,
-
-      u_colorMult: [
-        0.025,
-        0.012,
-        0.006,
-        1.0,
-      ],
-
-      u_texture:
-        window.whiteTexture,
-
-      u_ambient: 0.35,
-      u_lightIntensity: 0.0,
-    }
-  );
-
-  webglUtils.drawBufferInfo(
-    gl,
-    wickBufferInfo
-  );
+  webglUtils.drawBufferInfo(gl, wickBufferInfo);
 }
