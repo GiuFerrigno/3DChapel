@@ -362,51 +362,22 @@ function drawCandles(view, projection, cameraPosition, lightDirection) {
 
 
 
-function drawFlame(
-  index,
-  candlePosition,
-  candleScale,
-  view,
-  projection,
-  cameraPosition,
-  lightDirection
-) {
-  const time =
-    state.candles.time;
+function drawFlame(index, candlePosition, candleScale, view, projection, cameraPosition, lightDirection) {
+  const time = state.candles.time;
 
-  const phase =
-    index * 1.7;
+  const phase = index * 1.7;
 
-  const flicker =
-    state.candles.flicker || 1.0;
+  const flicker = state.candles.flicker || 1.0;
 
-  const pulse =
-    flicker +
-    0.02 *
-    Math.sin(
-      time *
-      5.0 *
-      state.candles.speed +
-      phase
-    );
+  const pulse = flicker + 0.02 * Math.sin(time * 5.0 * state.candles.speed + phase);
 
-  const sway =
-    0.035 *
-    Math.sin(
-      time *
-      3.0 *
-      state.candles.speed +
-      phase
-    );
+  const sway = 0.035 * Math.sin(time * 3.0 * state.candles.speed + phase);
 
-  const candleTopY =
-    candlePosition[1] +
-    candleScale[1] * 0.5;
+  const candleTopY = candlePosition[1] + candleScale[1] * 0.5;
 
   const flameOffsetY = 0.04;
 
-  let flameWorld =
-    m4.identity();
+  let flameWorld = m4.identity();
 
   flameWorld =
     m4.translate(
@@ -423,8 +394,7 @@ function drawFlame(
       sway
     );
 
-  const flameSizeFactor =
-  0.95;
+  const flameSizeFactor = 0.95;
 
   flameWorld =
     m4.scale(
@@ -446,15 +416,9 @@ function drawFlame(
       m4.inverse(flameWorld)
     );
 
-  gl.useProgram(
-    programInfo.program
-  );
+  gl.useProgram(programInfo.program);
 
-  webglUtils.setBuffersAndAttributes(
-    gl,
-    programInfo,
-    flameBufferInfo
-  );
+  webglUtils.setBuffersAndAttributes(gl, programInfo, flameBufferInfo);
 
   webglUtils.setUniforms(
     programInfo,
@@ -471,8 +435,8 @@ function drawFlame(
 
       u_colorMult: [
         1.0,
-        0.35,
-        0.03,
+        0.55,
+        0.08,
         1.0,
       ],
 

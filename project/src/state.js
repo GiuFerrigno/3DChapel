@@ -58,8 +58,8 @@ const state = {
 
     light: {
       position: [0.0, 1.85, -5.4],
-      color: [1.0, 0.42, 0.08],
-      intensity: 3.0,
+      color: [1.0, 0.48, 0.12],
+      intensity: 2.6,
       radius: 7.0,
     },
 

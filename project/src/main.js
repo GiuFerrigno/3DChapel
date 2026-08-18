@@ -40,8 +40,8 @@ varying vec2 v_texcoord;
 uniform vec4 u_colorMult;
 uniform sampler2D u_texture;
 uniform float u_ambient;
-
 uniform vec3 u_pointLightPosition;
+uniform vec3 u_pointLightColor;
 uniform float u_pointLightIntensity;
 uniform float u_pointLightRadius;
 
@@ -49,51 +49,20 @@ void main() {
   vec3 normal = normalize(v_normal);
 
   vec3 toLight = u_pointLightPosition - v_worldPosition;
-
   float distanceToLight = length(toLight);
-
   vec3 lightDir = normalize(toLight);
-
   float diffuse = max(dot(normal, lightDir), 0.0);
 
-  float attenuation =
-    1.0 /
-    (
-      1.0 +
-      distanceToLight /
-      u_pointLightRadius +
-      (distanceToLight * distanceToLight) /
-      (
-        u_pointLightRadius *
-        u_pointLightRadius
-      )
-    );
+  float attenuation = 1.0 / (1.0 + distanceToLight / u_pointLightRadius + 
+                      (distanceToLight * distanceToLight) / (u_pointLightRadius * u_pointLightRadius));
 
-  float light =
-    u_ambient +
-    diffuse *
-    u_pointLightIntensity *
-    attenuation;
+  vec3 lightColor = vec3(u_ambient) + u_pointLightColor * diffuse * u_pointLightIntensity * attenuation;
 
-  vec4 texColor =
-    texture2D(
-      u_texture,
-      v_texcoord
-    );
+  vec4 baseColor = texture2D(u_texture, v_texcoord) * u_colorMult;
 
-  vec4 baseColor =
-    texColor *
-    u_colorMult;
-
-  if (baseColor.a < 0.05) {
-    discard;
-  }
-
-  gl_FragColor =
-    vec4(
-      baseColor.rgb * light,
-      baseColor.a
-    );
+  if (baseColor.a < 0.05) discard;
+  
+  gl_FragColor = vec4(baseColor.rgb * lightColor, baseColor.a);
 }
 `;
 
