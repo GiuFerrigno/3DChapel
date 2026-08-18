@@ -66,6 +66,38 @@ void main() {
 }
 `;
 
+const candleVS = `
+attribute vec4 a_position;
+attribute vec2 a_texcoord;
+
+uniform mat4 u_world;
+uniform mat4 u_view;
+uniform mat4 u_projection;
+
+varying vec2 v_texcoord;
+
+void main() {
+  gl_Position = u_projection * u_view * u_world * a_position;
+  v_texcoord = a_texcoord;
+}
+`;
+
+const candleFS = `
+precision mediump float;
+
+uniform vec4 u_colorMult;
+uniform sampler2D u_texture;
+uniform float u_emissionStrength;
+
+varying vec2 v_texcoord;
+
+void main() {
+  vec4 color = texture2D(u_texture, v_texcoord) * u_colorMult;
+  if (color.a < 0.05) discard;
+  gl_FragColor = vec4(color.rgb * u_emissionStrength, color.a);
+}
+`;
+
 function setupGUI() {
   gui = new dat.GUI();
 
@@ -142,6 +174,8 @@ async function main() {
   }
 
   programInfo = webglUtils.createProgramInfo(gl, [vs, fs]);
+  
+  candleProgramInfo = webglUtils.createProgramInfo(gl, [candleVS, candleFS]);
 
   await loadSceneTextures(gl);
 

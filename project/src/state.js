@@ -2,6 +2,7 @@
 
 let gl = null;
 let programInfo = null;
+let candleProgramInfo = null;
 
 // Camera defaults
 const CAMERA_DEFAULTS = {
@@ -50,7 +51,7 @@ const state = {
     flameScale: [0.10, 0.22, 0.10],
 
     wickHeight: 0.075,
-    wickRadius: 0.018, 
+    wickRadius: 0.01, 
 
     animate: true,
     time: 0.0, 

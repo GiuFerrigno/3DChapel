@@ -289,58 +289,35 @@ function createFlameBufferInfo(gl, segments = 16) {
   );
 }
 
+function drawCandleUnlit(bufferInfo, world, view, projection, color, emissionStrength) {
+  const program = candleProgramInfo;
+  gl.useProgram(program.program);
+  webglUtils.setBuffersAndAttributes(gl, program, bufferInfo);
+  webglUtils.setUniforms(program, {
+    u_world: world,
+    u_view: view,
+    u_projection: projection,
+    u_colorMult: color,
+    u_texture: window.whiteTexture,
+    u_emissionStrength: emissionStrength,
+  });
+  webglUtils.drawBufferInfo(gl, bufferInfo);
+}
+
 
 function drawCandles(view, projection, cameraPosition, lightDirection) {
   if (!state.candles.enabled) return;
 
-  for (let i = 0; i < state.candles.positions.length; i++) {
+  for (let i = 0; i < state.candles.positions.length; ++i) {
     const p = state.candles.positions[i];
-
     const isCenter = i === 1;
-
     const candleScale = isCenter ? [0.12, 0.70, 0.12] : state.candles.candleScale;
 
     let candleWorld = m4.identity();
+    candleWorld = m4.translate(candleWorld, p[0], p[1], p[2]);
+    candleWorld = m4.scale(candleWorld, candleScale[0], candleScale[1], candleScale[2]);
 
-    candleWorld = m4.translate(
-      candleWorld,
-      p[0],
-      p[1],
-      p[2]
-    );
-
-    candleWorld = m4.scale(
-      candleWorld,
-      candleScale[0],
-      candleScale[1],
-      candleScale[2]
-    );
-
-    const candleInverseTranspose = m4.transpose(
-      m4.inverse(candleWorld)
-    );
-
-    gl.useProgram(programInfo.program);
-
-    webglUtils.setBuffersAndAttributes(
-      gl,
-      programInfo,
-      candleBufferInfo
-    );
-
-    webglUtils.setUniforms(programInfo, {
-      u_world: candleWorld,
-      u_view: view,
-      u_projection: projection,
-      u_worldInverseTranspose: candleInverseTranspose,
-      u_viewWorldPosition: cameraPosition,
-      u_colorMult: [1.0, 0.78, 0.42, 1.0],
-      u_texture: window.whiteTexture,
-      u_emissionStrength: 0.12,
-      ...getCandleLightUniforms(),
-    });
-
-    webglUtils.drawBufferInfo(gl, candleBufferInfo);
+    drawCandleUnlit(candleBufferInfo, candleWorld, view, projection, [1.0, 0.78, 0.42, 1.0], 1.0);
 
     drawWick(i, p, candleScale, view, projection, cameraPosition, lightDirection);
     drawFlame(i, p, candleScale, view, projection, cameraPosition, lightDirection);
@@ -351,139 +328,51 @@ function drawCandles(view, projection, cameraPosition, lightDirection) {
 
 function drawFlame(index, candlePosition, candleScale, view, projection, cameraPosition, lightDirection) {
   const time = state.candles.time;
-
   const phase = index * 1.7;
-
   const flicker = state.candles.flicker || 1.0;
-
   const pulse = flicker + 0.02 * Math.sin(time * 5.0 * state.candles.speed + phase);
-
   const sway = 0.035 * Math.sin(time * 3.0 * state.candles.speed + phase);
-
   const candleTopY = candlePosition[1] + candleScale[1] * 0.5;
-
   const flameOffsetY = 0.04;
 
   let flameWorld = m4.identity();
-
-  flameWorld =
-    m4.translate(
-      flameWorld,
-      candlePosition[0],
-      candleTopY +
-        flameOffsetY,
-      candlePosition[2]
-    );
-
-  flameWorld =
-    m4.zRotate(
-      flameWorld,
-      sway
-    );
+  flameWorld = m4.translate(flameWorld, candlePosition[0], candleTopY + flameOffsetY, candlePosition[2]);
+  flameWorld = m4.zRotate(flameWorld, sway);
 
   const flameSizeFactor = 0.95;
+  flameWorld = m4.scale(
+    flameWorld,
+    state.candles.flameScale[0] * flameSizeFactor * (2.0 - pulse),
+    state.candles.flameScale[1] * flameSizeFactor * pulse,
+    state.candles.flameScale[2] * flameSizeFactor
+  );
 
-  flameWorld =
-    m4.scale(
-      flameWorld,
-      state.candles.flameScale[0] *
-        flameSizeFactor *
-        (2.0 - pulse),
-
-      state.candles.flameScale[1] *
-        flameSizeFactor *
-        pulse,
-
-      state.candles.flameScale[2] *
-        flameSizeFactor
-    );
-
-  const flameInverseTranspose =
-    m4.transpose(
-      m4.inverse(flameWorld)
-    );
-
-  gl.useProgram(programInfo.program);
-
-  webglUtils.setBuffersAndAttributes(gl, programInfo, flameBufferInfo);
-
-  webglUtils.setUniforms(programInfo, {
-    u_world: flameWorld,
-    u_view: view,
-    u_projection: projection,
-    u_worldInverseTranspose: flameInverseTranspose,
-    u_viewWorldPosition: cameraPosition,
-    u_colorMult: [1.0, 0.55, 0.08, 1.0],
-    u_texture: window.whiteTexture,
-    u_emissionStrength: 1.2,
-    ...getCandleLightUniforms(),
-  });
-
-  webglUtils.drawBufferInfo(gl, flameBufferInfo);
+  drawCandleUnlit(
+    flameBufferInfo,
+    flameWorld,
+    view,
+    projection,
+    [1.0, 0.24, 0.005, 1.0],
+    1.2
+  );
 }
 
 function drawWick(index, candlePosition, candleScale, view, projection, cameraPosition, lightDirection) {
   const wickHeight = state.candles.wickHeight ?? 0.075;
-
   const wickRadius = state.candles.wickRadius ?? 0.018;
+  const candleTopY = candlePosition[1] + candleScale[1] * 0.5;
+  const wickCenterY = candleTopY + wickHeight * 0.5 - 0.005;
 
-  // Il cilindro della candela è centrato
-  // su candlePosition[1].
-  const candleTopY =
-    candlePosition[1] +
-    candleScale[1] * 0.5;
+  let wickWorld = m4.identity();
+  wickWorld = m4.translate(wickWorld, candlePosition[0], wickCenterY, candlePosition[2]);
+  wickWorld = m4.scale(wickWorld, wickRadius / 0.5, wickHeight, wickRadius / 0.5);
 
-  // La mesh della miccia è anch'essa centrata
-  // sulla propria origine.
-  const wickCenterY =
-  candleTopY +
-  wickHeight * 0.5 -
-  0.005;
-
-  let wickWorld =
-    m4.identity();
-
-  wickWorld =
-    m4.translate(
-      wickWorld,
-      candlePosition[0],
-      wickCenterY,
-      candlePosition[2]
-    );
-
-  wickWorld =
-    m4.scale(
-      wickWorld,
-      wickRadius,
-      wickHeight,
-      wickRadius
-    );
-
-  const wickInverseTranspose =
-    m4.transpose(
-      m4.inverse(wickWorld)
-    );
-
-  gl.useProgram(
-    programInfo.program
+  drawCandleUnlit(
+    wickBufferInfo,
+    wickWorld,
+    view,
+    projection,
+    [0.025, 0.012, 0.006, 1.0],
+    1.0
   );
-
-  webglUtils.setBuffersAndAttributes(
-    gl,
-    programInfo,
-    wickBufferInfo
-  );
-
-  webglUtils.setUniforms(programInfo, {
-    u_world: wickWorld,
-    u_view: view,
-    u_projection: projection,
-    u_worldInverseTranspose: wickInverseTranspose,
-    u_colorMult: [0.025, 0.012, 0.006, 1.0],
-    u_texture: window.whiteTexture,
-    u_emissionStrength: 0.0,
-    ...getCandleLightUniforms(),
-  });
-
-  webglUtils.drawBufferInfo(gl, wickBufferInfo);
 }
