@@ -112,10 +112,8 @@ function setupGUI() {
   lightFolder.add(state, "ambient", 0.0, 1.0, 0.01).name("Ambient");
   lightFolder.add(state.candles.light, "baseIntensity", 0.0, 8.0, 0.01).name("Intensity");
   lightFolder.add(state.candles.light, "radius", 0.5, 20.0, 0.1).name("Radius");
-  lightFolder.add(state.candles, "enabled").name("Candles");
 
   const effectsFolder = gui.addFolder("Effects");
-  effectsFolder.add(state.candles, "animate" ).name("Flames animation");
   effectsFolder.add(state.candles, "speed", 0.2, 3.0, 0.1).name("Speed");
 
   const guiActions = {
@@ -134,33 +132,69 @@ function resizeCanvas() {
 
 function render(time) {
   time *= 0.001;
-  const dt = Math.min(time - lastTime, 0.033);
+
+  const dt = Math.min(
+    time - lastTime,
+    0.033
+  );
+
   lastTime = time;
 
   updateKeyboardMovement(dt);
-  updateCandles(time);          
- 
+  updateCandles(time);
+
   resizeCanvas();
 
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+  // Stato iniziale del frame
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
+  gl.disable(gl.BLEND);
+  gl.depthMask(true);
 
   gl.clearColor(0.86, 0.92, 0.98, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-  const projection = m4.perspective(Math.PI / 4, aspect, 0.1, 100.0);
+
+  const projection = m4.perspective(
+    Math.PI / 4,
+    aspect,
+    0.1,
+    100.0
+  );
 
   const cameraPosition = getCameraPosition();
+
+  // Serve ancora?
   const cameraTarget = getCameraTarget();
-  const camera = m4.lookAt(cameraPosition, cameraTarget, [0, 1, 0]);
+
+  const camera = m4.lookAt(
+    cameraPosition,
+    cameraTarget,
+    [0, 1, 0]
+  );
 
   const view = m4.inverse(camera);
 
-  drawChapel(view, projection, cameraPosition);
+  // Pass opaco
+  beginOpaquePass(gl);
+
+  drawChapelOpaque(view, projection, cameraPosition);
   drawChapelParts(view, projection, cameraPosition);
-  drawCandles(view, projection, cameraPosition);
+  drawCandlesOpaque(view, projection, cameraPosition);
+
+  // Pass trasparente
+  beginTransparentPass(gl);
+
+  drawChapelTransparent(view, projection, cameraPosition);
+  drawCandlesTransparent(view, projection, cameraPosition);
   drawDust(view, projection, time);
+
+  // Ripristina lo stato
+  endTransparentPass(gl);
 
   requestAnimationFrame(render);
 }

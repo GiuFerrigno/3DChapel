@@ -80,6 +80,9 @@ const state = {
     count: 70,
   },
 
+  advancedRendering: {
+    transparency: false,
+  },
 };
 
 // Input state

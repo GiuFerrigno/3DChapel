@@ -565,3 +565,22 @@ function createBufferForGroup(gl, mesh, groupIndex) {
 
   return bufferInfo;
 }
+
+
+function beginOpaquePass(gl) {
+  gl.disable(gl.BLEND);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthMask(true);
+}
+
+function beginTransparentPass(gl) {
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthMask(false);
+}
+
+function endTransparentPass(gl) {
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
+}

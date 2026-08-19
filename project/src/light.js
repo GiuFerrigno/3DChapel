@@ -391,8 +391,8 @@ function drawSmokeUnlit(bufferInfo, world, view, projection, color) {
   webglUtils.drawBufferInfo(gl, bufferInfo);
 }
 
-
-function drawCandles(view, projection, cameraPosition, lightDirection) {
+/*
+function drawCandles(view, projection, cameraPosition) {
   if (!state.candles.enabled) return;
 
   for (let i = 0; i < state.candles.positions.length; ++i) {
@@ -406,15 +406,16 @@ function drawCandles(view, projection, cameraPosition, lightDirection) {
 
     drawCandleUnlit(candleBufferInfo, candleWorld, view, projection, [1.0, 0.78, 0.42, 1.0], 1.0);
 
-    drawWick(i, p, candleScale, view, projection, cameraPosition, lightDirection);
-    drawFlame(i, p, candleScale, view, projection, cameraPosition, lightDirection);
+    drawWick(i, p, candleScale, view, projection, cameraPosition);
+    drawFlame(i, p, candleScale, view, projection, cameraPosition);
     drawSmoke(i, p, candleScale, view, projection, cameraPosition);
   }
 }
+  */
 
 
 
-function drawFlame(index, candlePosition, candleScale, view, projection, cameraPosition, lightDirection) {
+function drawFlame(index, candlePosition, candleScale, view, projection, cameraPosition) {
   const time = state.candles.time;
   const phase = index * 1.7;
   const flicker = state.candles.flicker || 1.0;
@@ -445,7 +446,7 @@ function drawFlame(index, candlePosition, candleScale, view, projection, cameraP
   );
 }
 
-function drawWick(index, candlePosition, candleScale, view, projection, cameraPosition, lightDirection) {
+function drawWick(index, candlePosition, candleScale, view, projection, cameraPosition) {
   const wickHeight = state.candles.wickHeight ?? 0.075;
   const wickRadius = state.candles.wickRadius ?? 0.018;
   const candleTopY = candlePosition[1] + candleScale[1] * 0.5;
@@ -494,4 +495,108 @@ function drawSmoke(index, candlePosition, candleScale, view, projection, cameraP
 
   gl.depthMask(true);
   gl.disable(gl.BLEND);
+}
+
+
+
+function drawCandlesOpaque(
+  view,
+  projection,
+  cameraPosition,
+  lightDirection
+) {
+  if (!state.candles.enabled) return;
+
+  for (
+    let i = 0;
+    i < state.candles.positions.length;
+    ++i
+  ) {
+    const p = state.candles.positions[i];
+    const isCenter = i === 1;
+
+    const candleScale = isCenter
+      ? [0.12, 0.70, 0.12]
+      : state.candles.candleScale;
+
+    let candleWorld = m4.identity();
+
+    candleWorld = m4.translate(
+      candleWorld,
+      p[0],
+      p[1],
+      p[2]
+    );
+
+    candleWorld = m4.scale(
+      candleWorld,
+      candleScale[0],
+      candleScale[1],
+      candleScale[2]
+    );
+
+    // Parte opaca
+    drawCandleUnlit(
+      candleBufferInfo,
+      candleWorld,
+      view,
+      projection,
+      [1.0, 0.78, 0.42, 1.0],
+      1.0
+    );
+
+    // La miccia resta qui se ha alpha 1.0
+    drawWick(
+      i,
+      p,
+      candleScale,
+      view,
+      projection,
+      cameraPosition,
+      lightDirection
+    );
+  }
+}
+
+
+function drawCandlesTransparent(
+  view,
+  projection,
+  cameraPosition,
+  lightDirection
+) {
+  if (!state.candles.enabled) return;
+
+  for (
+    let i = 0;
+    i < state.candles.positions.length;
+    ++i
+  ) {
+    const p = state.candles.positions[i];
+    const isCenter = i === 1;
+
+    const candleScale = isCenter
+      ? [0.12, 0.70, 0.12]
+      : state.candles.candleScale;
+
+    // Queste due parti devono usare alpha < 1
+    drawFlame(
+      i,
+      p,
+      candleScale,
+      view,
+      projection,
+      cameraPosition,
+      lightDirection
+    );
+
+    drawSmoke(
+      i,
+      p,
+      candleScale,
+      view,
+      projection,
+      cameraPosition
+    );
+  }
 }

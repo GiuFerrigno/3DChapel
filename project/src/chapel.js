@@ -121,12 +121,12 @@ function getChapelWorld() {
   return world;
 }
 
-function drawChapel(view, projection, cameraPosition) {
+function createChapelDrawContext(view, projection, cameraPosition) {
   const world = getChapelWorld();
-  const worldInverseTranspose = m4.transpose(m4.inverse(world));
-  const candleLight = state.candles.light;
+  const worldInverseTranspose =
+    m4.transpose(m4.inverse(world));
 
-  gl.useProgram(programInfo.program);
+  const candleLight = state.candles.light;
 
   const commonUniforms = {
     u_world: world,
@@ -143,43 +143,74 @@ function drawChapel(view, projection, cameraPosition) {
   };
 
   function drawPart(part) {
-    if (!part.bufferInfo || !part.texture) return;
+    if (!part || !part.bufferInfo || !part.texture) return;
 
-    webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
-
-    webglUtils.setUniforms(
+    webglUtils.setBuffersAndAttributes(
+      gl,
       programInfo,
-      {
-        ...commonUniforms,
-        u_colorMult: part.color,
-        u_texture: part.texture,
-      }
+      part.bufferInfo
     );
+
+    webglUtils.setUniforms(programInfo, {
+      ...commonUniforms,
+      u_colorMult: part.color,
+      u_texture: part.texture,
+    });
 
     webglUtils.drawBufferInfo(gl, part.bufferInfo);
   }
 
-  drawPart(chapelParts.floor);
-  drawPart(chapelParts.walls);
-  drawPart(chapelParts.roof);
-  drawPart(chapelParts.roofCurved);
-  drawPart(chapelParts.door);
+  return {
+    drawPart,
+    parts: chapelParts,
+  };
+}
 
-  // Trasparenza solo per le finestre
-  gl.enable(gl.BLEND);
-  gl.blendFunc(
-    gl.SRC_ALPHA,
-    gl.ONE_MINUS_SRC_ALPHA
+
+function drawChapelOpaque(
+  view,
+  projection,
+  cameraPosition
+) {
+  gl.useProgram(programInfo.program);
+
+  const chapel = createChapelDrawContext(
+    view,
+    projection,
+    cameraPosition
   );
-  gl.depthMask(false);
+
+  chapel.drawPart(chapel.parts.floor);
+  chapel.drawPart(chapel.parts.walls);
+  chapel.drawPart(chapel.parts.roof);
+  chapel.drawPart(chapel.parts.roofCurved);
+  chapel.drawPart(chapel.parts.door);
+}
+
+
+function drawChapelTransparent(
+  view,
+  projection,
+  cameraPosition
+) {
+  gl.useProgram(programInfo.program);
+
+  const chapel = createChapelDrawContext(
+    view,
+    projection,
+    cameraPosition
+  );
+
+  const wasCullingEnabled = gl.isEnabled(gl.CULL_FACE);
+
   gl.disable(gl.CULL_FACE);
 
-  drawPart(chapelParts.window);
-  drawPart(chapelParts.windowLeft);
-  drawPart(chapelParts.windowRight);
-  drawPart(chapelParts.circWindow);
+  chapel.drawPart(chapel.parts.window);
+  chapel.drawPart(chapel.parts.windowLeft);
+  chapel.drawPart(chapel.parts.windowRight);
+  chapel.drawPart(chapel.parts.circWindow);
 
-  gl.enable(gl.CULL_FACE);
-  gl.depthMask(true);
-  gl.disable(gl.BLEND);
+  if (wasCullingEnabled) {
+    gl.enable(gl.CULL_FACE);
+  }
 }
