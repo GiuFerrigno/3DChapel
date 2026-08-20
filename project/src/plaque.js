@@ -91,19 +91,13 @@ function drawPlaqueOBJ(view, projection, cameraPosition) {
     u_world: world,
     u_view: view,
     u_projection: projection,
-    u_worldInverseTranspose:
-      worldInverseTranspose,
+    u_worldInverseTranspose: worldInverseTranspose,
 
     u_ambient: state.ambient,
 
-    u_pointLightPosition:
-      state.candles.light.position,
-
-    u_pointLightIntensity:
-      state.candles.light.intensity,
-
-    u_pointLightRadius:
-      state.candles.light.radius,
+    u_pointLightPosition: state.candles.light.position,
+    u_pointLightIntensity: state.candles.light.intensity,
+    u_pointLightRadius: state.candles.light.radius,
   };
 
   function drawPart(part) {

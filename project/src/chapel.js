@@ -65,9 +65,7 @@ const chapelParts = {
 
 async function loadChapelMeshes(gl) {
   const response = await fetch(chapel.objPath);
-  if (!response.ok) {
-    throw new Error(`Impossibile caricare OBJ: chapel.obj`);
-  }
+  if (!response.ok) { throw new Error(`Impossibile caricare OBJ: chapel.obj`); }
 
   const text = await response.text();
 
@@ -88,13 +86,13 @@ async function loadChapelMeshes(gl) {
 
   chapelParts.roofCurved.bufferInfo  = createBufferForGroup(gl, mesh, 1);
   chapelParts.floor.bufferInfo       = createBufferForGroup(gl, mesh, 2);
-  chapelParts.roof.bufferInfo        = createBufferForGroup(gl, mesh, 9);
   chapelParts.walls.bufferInfo       = createBufferForGroup(gl, mesh, 3);
   chapelParts.door.bufferInfo        = createBufferForGroup(gl, mesh, 4);
   chapelParts.circWindow.bufferInfo  = createBufferForGroup(gl, mesh, 5);
   chapelParts.window.bufferInfo      = createBufferForGroup(gl, mesh, 6);
   chapelParts.windowLeft.bufferInfo  = createBufferForGroup(gl, mesh, 7);
   chapelParts.windowRight.bufferInfo = createBufferForGroup(gl, mesh, 8);
+  chapelParts.roof.bufferInfo        = createBufferForGroup(gl, mesh, 9);
 }
 
 function getChapelWorld() {
@@ -121,10 +119,9 @@ function getChapelWorld() {
   return world;
 }
 
-function createChapelDrawContext(view, projection, cameraPosition) {
+function createChapelDrawContext(view, projection, cameraPosition, light = null) {
   const world = getChapelWorld();
-  const worldInverseTranspose =
-    m4.transpose(m4.inverse(world));
+  const worldInverseTranspose = m4.transpose(m4.inverse(world));
 
   const candleLight = state.candles.light;
 
@@ -140,16 +137,20 @@ function createChapelDrawContext(view, projection, cameraPosition) {
     u_pointLightRadius: candleLight.radius,
     u_ambient: state.ambient,
     u_lightIntensity: 0.0,
+    u_lightView: light ? light.lightView : m4.identity(),
+    u_lightProjection: light ? light.lightProjection : m4.identity(),
   };
 
+  // TODO: ma i drawPart sono tutti uguali? forse si può generalizzare?
   function drawPart(part) {
     if (!part || !part.bufferInfo || !part.texture) return;
 
-    webglUtils.setBuffersAndAttributes(
-      gl,
-      programInfo,
-      part.bufferInfo
-    );
+    webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
+
+    if (shadowTexture) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, shadowTexture);
+    }
 
     webglUtils.setUniforms(programInfo, {
       ...commonUniforms,
@@ -160,25 +161,14 @@ function createChapelDrawContext(view, projection, cameraPosition) {
     webglUtils.drawBufferInfo(gl, part.bufferInfo);
   }
 
-  return {
-    drawPart,
-    parts: chapelParts,
-  };
+  return { drawPart, parts: chapelParts,};
 }
 
 
-function drawChapelOpaque(
-  view,
-  projection,
-  cameraPosition
-) {
+function drawChapelOpaque(view, projection, cameraPosition, light = null) {
   gl.useProgram(programInfo.program);
 
-  const chapel = createChapelDrawContext(
-    view,
-    projection,
-    cameraPosition
-  );
+  const chapel = createChapelDrawContext(view, projection, cameraPosition, light);
 
   chapel.drawPart(chapel.parts.floor);
   chapel.drawPart(chapel.parts.walls);
@@ -188,18 +178,10 @@ function drawChapelOpaque(
 }
 
 
-function drawChapelTransparent(
-  view,
-  projection,
-  cameraPosition
-) {
+function drawChapelTransparent(view, projection, cameraPosition) {
   gl.useProgram(programInfo.program);
 
-  const chapel = createChapelDrawContext(
-    view,
-    projection,
-    cameraPosition
-  );
+  const chapel = createChapelDrawContext(view, projection, cameraPosition);
 
   const wasCullingEnabled = gl.isEnabled(gl.CULL_FACE);
 

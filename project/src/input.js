@@ -1,5 +1,7 @@
 "use strict";
 
+//TODO: controllare che ci vogliano effettivamente tutti sti controlli 
+
 const pointerState = {
   active: false,
   pointerId: null,
@@ -49,10 +51,7 @@ function keepCameraInsideChapel() {
 }
 
 function resetPointerState(canvas) {
-  if (
-    pointerState.pointerId !== null &&
-    canvas.hasPointerCapture(pointerState.pointerId)
-  ) {
+  if (pointerState.pointerId !== null && canvas.hasPointerCapture(pointerState.pointerId)) {
     canvas.releasePointerCapture(pointerState.pointerId);
   }
 
@@ -92,6 +91,7 @@ function initPointerControls(canvas) {
     if (e.pointerId === pointerState.pointerId) {
       resetPointerState(canvas);
     }
+
     e.preventDefault();
   });
 
@@ -99,6 +99,7 @@ function initPointerControls(canvas) {
     if (e.pointerId === pointerState.pointerId) {
       resetPointerState(canvas);
     }
+
     e.preventDefault();
   });
 
@@ -145,10 +146,7 @@ function initKeyboardControls() {
 }
 
 function updateKeyboardMovement(dt) {
-  const speed =
-    (keys.ShiftLeft || keys.ShiftRight)
-      ? FAST_MOVE_SPEED
-      : BASE_MOVE_SPEED;
+  const speed = (keys.ShiftLeft || keys.ShiftRight) ? FAST_MOVE_SPEED : BASE_MOVE_SPEED;
 
   const step = speed * dt;
   const verticalStep = VERTICAL_MOVE_SPEED * dt;

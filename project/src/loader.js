@@ -1,5 +1,7 @@
 "use strict";
 
+// TODO: aggiungere qui i path degli obj?
+
 const TEXTURE_PATHS = {
   floor: "../textures/marble.jpg",
   floorTiles: "../textures/floorTiles.jpg",
@@ -94,7 +96,6 @@ async function loadSceneTextures(gl) {
   window.meshTexture = window.wallTexture;
 
 
-
   // Texture cappella
   chapelParts.roofCurved.texture      = window.ceilingTexture;         
   chapelParts.floor.texture           = window.floorTilesTexture;
@@ -105,7 +106,5 @@ async function loadSceneTextures(gl) {
   chapelParts.windowLeft.texture      = window.simpleWindowTexture;
   chapelParts.windowRight.texture     = window.simpleWindowTexture;
   chapelParts.circWindow.texture      = window.circularWindowTexture;
-
-  // Texture altre parti? 
 
 }

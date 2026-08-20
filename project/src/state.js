@@ -81,7 +81,7 @@ const state = {
   },
 
   advancedRendering: {
-    transparency: false,
+    shadowMapping: true,
   },
 };
 

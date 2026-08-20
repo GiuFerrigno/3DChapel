@@ -1,7 +1,7 @@
 "use strict";
 
 
-function makePart(tx, ty, tz, sx, sy, sz, color, material = "white",shape = "box", side = null) {
+function makePart(tx, ty, tz, sx, sy, sz, color, material = "white", shape = "box", side = null) {
   return {
     t: [tx, ty, tz],
     s: [sx, sy, sz],
@@ -142,49 +142,39 @@ function buildChapelParts() {
   return parts;
 }
 
-function drawChapelParts(view, projection, cameraPosition) {
-  if (!chapelPartsList || !boxBufferInfo) {
-    return;
-  }
+function drawChapelParts(view, projection, cameraPosition, light = null) {
+  if (!chapelPartsList || !boxBufferInfo) return;
 
   gl.useProgram(programInfo.program);
 
-  const candleLight =
-    state.candles.light;
+  const candleLight = state.candles.light;
 
   const commonUniformsBase = {
     u_view: view,
     u_projection: projection,
     u_viewWorldPosition: cameraPosition,
 
-    u_pointLightPosition:
-      candleLight.position,
-
-    u_pointLightColor:
-      candleLight.color,
-
-    u_pointLightIntensity:
-      candleLight.intensity,
-
-    u_pointLightRadius:
-      candleLight.radius,
+    u_pointLightPosition: candleLight.position,
+    u_pointLightColor: candleLight.color,
+    u_pointLightIntensity: candleLight.intensity,
+    u_pointLightRadius: candleLight.radius,
 
     u_ambient: state.ambient,
     u_lightIntensity: 0.0,
+
+    u_lightView: light ? light.lightView : m4.identity(),
+    u_lightProjection: light ? light.lightProjection : m4.identity(),
+
+    u_shadowMap: shadowTexture,
+    u_shadowEnabled: light ? 1 : 0,    
   };
 
   for (const part of chapelPartsList) {
-    const bufferInfo =
-      boxBufferInfo;
+    const bufferInfo = boxBufferInfo;
 
-    webglUtils.setBuffersAndAttributes(
-      gl,
-      programInfo,
-      bufferInfo
-    );
+    webglUtils.setBuffersAndAttributes(gl, programInfo, bufferInfo);
 
-    let world =
-      m4.identity();
+    let world = m4.identity();
 
     world = m4.translate(
       world,
@@ -200,23 +190,23 @@ function drawChapelParts(view, projection, cameraPosition) {
       part.s[2]
     );
 
-    const worldInverseTranspose =
-      m4.transpose(
-        m4.inverse(world)
-      );
+    const worldInverseTranspose = m4.transpose(m4.inverse(world));
 
-    let texture =
-      window.wallTexture;
+    let texture = window.wallTexture;
 
     if (part.material === "wood") {
-      texture =
-        window.woodTexture;
-    } else if (part.material === "white") {
-      texture =
-        window.whiteTexture;
+      texture = window.woodTexture;
     } else if (part.material === "floor") {
-      texture =
-        window.floorTilesTexture;
+      texture = window.floorTilesTexture;
+
+    //TODO: è una fallback o qualcuno ha effettivamente questa texture?  
+    } else if (part.material === "white") {
+      texture = window.whiteTexture;
+    }
+
+    if (shadowTexture) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, shadowTexture);
     }
 
     webglUtils.setUniforms(
@@ -231,10 +221,7 @@ function drawChapelParts(view, projection, cameraPosition) {
       }
     );
 
-    webglUtils.drawBufferInfo(
-      gl,
-      bufferInfo
-    );
+    webglUtils.drawBufferInfo(gl, bufferInfo);
   }
 
   drawColumnsOBJ(view, projection, cameraPosition);

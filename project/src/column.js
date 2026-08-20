@@ -29,17 +29,10 @@ function createColumnArraysFromMesh(mesh) {
   for (let i = 1; i <= mesh.nface; i++) {
     const face = mesh.face[i];
 
-    if (
-      !face ||
-      !face.vert ||
-      face.vert.length < 3
-    ) {
-      continue;
-    }
+    if (!face || !face.vert || face.vert.length < 3) continue;
 
     for (let k = 0; k < 3; k++) {
-      const vertex =
-        mesh.vert[face.vert[k]];
+      const vertex = mesh.vert[face.vert[k]];
 
       if (!vertex) continue;
 
@@ -49,35 +42,21 @@ function createColumnArraysFromMesh(mesh) {
         vertex.z
       );
 
-      const normalIndex =
-        face.normalVertexIndex?.[k];
+      const normalIndex = face.normalVertexIndex?.[k];
 
-      const normal =
-        normalIndex &&
-        mesh.normal?.[normalIndex]
-          ? mesh.normal[normalIndex]
-          : mesh.facetnorms?.[
-              face.normalFaceIndex
-            ];
+      const normal = normalIndex && mesh.normal?.[normalIndex] ? 
+                     mesh.normal[normalIndex] : mesh.facetnorms?.[face.normalFaceIndex];
 
       if (normal) {
-        normals.push(
-          normal.i,
-          normal.j,
-          normal.k
-        );
+        normals.push(normal.i, normal.j, normal.k);
       } else {
         normals.push(0, 1, 0);
       }
 
-      const uvIndex =
-        face.textCoordsIndex?.[k];
+      const uvIndex = face.textCoordsIndex?.[k];
 
-      const uv =
-        uvIndex &&
-        mesh.textCoords?.[uvIndex]
-          ? mesh.textCoords[uvIndex]
-          : null;
+      const uv = uvIndex && mesh.textCoords?.[uvIndex] ? 
+                 mesh.textCoords[uvIndex] : null ;
 
       if (uv) {
         texcoords.push(uv.u, uv.v);
@@ -106,26 +85,14 @@ function createColumnArraysFromMesh(mesh) {
 // Carica il file OBJ della colonna
 async function initColumnOBJ(gl) {
   const response = await fetch(COLUMN_OBJ_CONFIG.url);
-
-  if (!response.ok) {
-    throw new Error(
-      `Impossibile caricare ${COLUMN_OBJ_CONFIG.url}: HTTP ${response.status}`
-    );
-  }
+  if (!response.ok) { throw new Error(`Impossibile caricare ${COLUMN_OBJ_CONFIG.url}`); }
 
   const objText = await response.text();
-
   const mesh = new subd_mesh();
 
-  glmReadOBJ(
-    objText,
-    mesh
-  );
+  glmReadOBJ(objText, mesh);
 
-  if (
-    !mesh.normal ||
-    mesh.normal.length <= 1
-  ) {
+  if (!mesh.normal || mesh.normal.length <= 1) {
     FacetNormals(mesh);
   }
 
@@ -135,32 +102,20 @@ async function initColumnOBJ(gl) {
   // Calcola le dimensioni reali dopo Unitize
   columnObjBounds = computeMeshBounds(mesh);
 
-  if (!columnObjBounds || columnObjBounds.height <= 0) {
-    throw new Error(
-      "Altezza OBJ non valida"
-    );
-  }
+  if (!columnObjBounds || columnObjBounds.height <= 0) { throw new Error("Altezza OBJ non valida"); }
 
   // Altezza desiderata: uguale alla parete
-  const targetHeight =
-    COLUMN_DIMS.targetHeight;
+  const targetHeight = COLUMN_DIMS.targetHeight;
 
   // Scala uniforme per mantenere le proporzioni
-  const uniformScale =
-    targetHeight /
-    columnObjBounds.height;
+  const uniformScale = targetHeight / columnObjBounds.height;
 
-  COLUMN_OBJ_CONFIG.scale = [
-    uniformScale,
-    uniformScale,
-    uniformScale,
-  ];
+  COLUMN_OBJ_CONFIG.scale = [uniformScale, uniformScale, uniformScale];
 
   // Porta il punto più basso dell'OBJ a Y = 0
   COLUMN_OBJ_CONFIG.positionY = -columnObjBounds.minY * uniformScale;
 
-  const arrays =
-    createColumnArraysFromMesh(mesh);
+  const arrays = createColumnArraysFromMesh(mesh);
 
   columnObjBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
 
@@ -174,12 +129,10 @@ function drawColumnsOBJ(view, projection, cameraPosition) {
 
   for (const z of COLUMN_ROWS_Z) {
     //Colonne sinistre
-    drawColumnOBJAt(
-      getColumnPosition(COLUMN_DIMS.xLeft, z), Math.PI, view, projection, cameraPosition);
+    drawColumnOBJAt(getColumnPosition(COLUMN_DIMS.xLeft, z), Math.PI, view, projection, cameraPosition);
 
     //Colonne destre
-    drawColumnOBJAt(
-      getColumnPosition(COLUMN_DIMS.xRight, z), 0.0, view, projection, cameraPosition);
+    drawColumnOBJAt(getColumnPosition(COLUMN_DIMS.xRight, z), 0.0, view, projection, cameraPosition);
   }
 }
 
@@ -209,23 +162,13 @@ function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition) 
     COLUMN_OBJ_CONFIG.scale[2]
   );
 
-  const worldInverseTranspose =
-    m4.transpose(
-      m4.inverse(world)
-    );
+  const worldInverseTranspose = m4.transpose(m4.inverse(world));
 
-  const candleLight =
-    state.candles.light;
+  const candleLight = state.candles.light;
 
-  gl.useProgram(
-    programInfo.program
-  );
+  gl.useProgram(programInfo.program);
 
-  webglUtils.setBuffersAndAttributes(
-    gl,
-    programInfo,
-    columnObjBufferInfo
-  );
+  webglUtils.setBuffersAndAttributes(gl, programInfo, columnObjBufferInfo);
 
   webglUtils.setUniforms(
     programInfo,
@@ -233,46 +176,24 @@ function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition) 
       u_world: world,
       u_view: view,
       u_projection: projection,
-      u_worldInverseTranspose:
-        worldInverseTranspose,
+      u_worldInverseTranspose: worldInverseTranspose,
+      u_viewWorldPosition: cameraPosition,
 
-      u_viewWorldPosition:
-        cameraPosition,
-
-      u_pointLightPosition:
-        candleLight.position,
-
-      u_pointLightColor:
-        candleLight.color,
-
-      u_pointLightIntensity:
-        candleLight.intensity,
-
-      u_pointLightRadius:
-        candleLight.radius,
-
-      u_colorMult:
-        COLUMN_OBJ_CONFIG.color,
-
-      u_texture:
-        window.columnTexture ||
-        window.whiteTexture,
+      u_pointLightPosition: candleLight.position,
+      u_pointLightColor: candleLight.color,
+      u_pointLightIntensity: candleLight.intensity,
+      u_pointLightRadius: candleLight.radius,
+      u_colorMult: COLUMN_OBJ_CONFIG.color,
+      u_texture: window.columnTexture || window.whiteTexture,
 
       u_ambient: state.ambient,
       u_lightIntensity: 0.0,
     }
   );
 
-  gl.disable(
-    gl.CULL_FACE
-  );
+  gl.disable(gl.CULL_FACE);
 
-  webglUtils.drawBufferInfo(
-    gl,
-    columnObjBufferInfo
-  );
+  webglUtils.drawBufferInfo(gl, columnObjBufferInfo);
 
-  gl.enable(
-    gl.CULL_FACE
-  );
+  gl.enable(gl.CULL_FACE);
 }

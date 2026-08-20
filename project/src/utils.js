@@ -105,7 +105,7 @@ function resetCamera() {
   keepCameraInsideChapel();
 }
 
-// Crea cubi ? 
+// Crea cubo
 function createUnitCubeArrays() {
   // Cubo unitario centrato in (0,0,0), lati da -0.5 a +0.5
   const positions = [
@@ -194,177 +194,67 @@ function createUnitCubeArrays() {
 }
 
 // Buffer Info per cilindro 
-function createCylinderBufferInfo(
-  gl,
-  radius = 0.5,
-  height = 1.0,
-  segments = 20
-) {
+function createCylinderBufferInfo(gl, radius = 0.5, height = 1.0, segments = 20) {
   const positions = [];
   const normals = [];
   const texcoords = [];
   const indices = [];
 
-  const halfHeight =
-    height * 0.5;
+  const halfHeight = height * 0.5;
 
-  for (
-    let i = 0;
-    i < segments;
-    ++i
-  ) {
-    const angle =
-      i / segments *
-      Math.PI * 2;
+  for (let i = 0; i < segments; ++i) {
 
-    const x =
-      Math.cos(angle);
+    const angle = i / segments * Math.PI * 2;
+    const x = Math.cos(angle);
+    const z = Math.sin(angle);
 
-    const z =
-      Math.sin(angle);
+    const u = i / segments;
 
-    const u =
-      i / segments;
+    positions.push(radius * x, -halfHeight, radius * z);
+    normals.push(x, 0, z);
+    texcoords.push(u, 0);
 
-    positions.push(
-      radius * x,
-      -halfHeight,
-      radius * z
-    );
-
-    normals.push(
-      x,
-      0,
-      z
-    );
-
-    texcoords.push(
-      u,
-      0
-    );
-
-    positions.push(
-      radius * x,
-      halfHeight,
-      radius * z
-    );
-
-    normals.push(
-      x,
-      0,
-      z
-    );
-
-    texcoords.push(
-      u,
-      1
-    );
+    positions.push(radius * x, halfHeight, radius * z);
+    normals.push(x, 0, z);
+    texcoords.push(u, 1);
   }
 
-  for (
-    let i = 0;
-    i < segments;
-    ++i
-  ) {
-    const next =
-      (i + 1) % segments;
+  for (let i = 0; i < segments; ++i) {
+    const next = (i + 1) % segments;
 
-    const bottom =
-      i * 2;
+    const bottom = i * 2;
+    const top = bottom + 1;
 
-    const top =
-      bottom + 1;
+    const nextBottom = next * 2;
+    const nextTop = nextBottom + 1;
 
-    const nextBottom =
-      next * 2;
-
-    const nextTop =
-      nextBottom + 1;
-
-    indices.push(
-      bottom,
-      nextBottom,
-      top
-    );
-
-    indices.push(
-      nextBottom,
-      nextTop,
-      top
-    );
+    indices.push(bottom, nextBottom, top);
+    indices.push(nextBottom, nextTop, top);
   }
 
-  const bottomCenter =
-    positions.length / 3;
+  const bottomCenter = positions.length / 3;
 
-  positions.push(
-    0,
-    -halfHeight,
-    0
-  );
+  positions.push(0, -halfHeight, 0);
+  normals.push(0, -1, 0);
+  texcoords.push(0.5, 0.5);
 
-  normals.push(
-    0,
-    -1,
-    0
-  );
+  const topCenter = bottomCenter + 1;
 
-  texcoords.push(
-    0.5,
-    0.5
-  );
+  positions.push(0, halfHeight, 0);
+  normals.push(0, 1, 0);
+  texcoords.push(0.5, 0.5);
 
-  const topCenter =
-    bottomCenter + 1;
+  for (let i = 0; i < segments; ++i) {
+    const next = (i + 1) % segments;
+    const bottom = i * 2;
+    const nextBottom = next * 2;
 
-  positions.push(
-    0,
-    halfHeight,
-    0
-  );
+    indices.push(bottomCenter, nextBottom, bottom);
 
-  normals.push(
-    0,
-    1,
-    0
-  );
+    const top = i * 2 + 1;
+    const nextTop = next * 2 + 1;
 
-  texcoords.push(
-    0.5,
-    0.5
-  );
-
-  for (
-    let i = 0;
-    i < segments;
-    ++i
-  ) {
-    const next =
-      (i + 1) % segments;
-
-    const bottom =
-      i * 2;
-
-    const nextBottom =
-      next * 2;
-
-    indices.push(
-      bottomCenter,
-      nextBottom,
-      bottom
-    );
-
-    const top =
-      i * 2 + 1;
-
-    const nextTop =
-      next * 2 + 1;
-
-    indices.push(
-      topCenter,
-      top,
-      nextTop
-    );
+    indices.push(topCenter, top, nextTop);
   }
 
   return webglUtils.createBufferInfoFromArrays(
@@ -447,20 +337,11 @@ function createBufferForGroup(gl, mesh, groupIndex) {
 
     if (!face.vert || face.vert.length < 3) continue;
 
-    for (
-      let k = 0;
-      k < 3;
-      k++
-    ) {
-      const vertexIndex =
-        face.vert[k];
+    for (let k = 0; k < 3; k++) {
+      const vertexIndex = face.vert[k];
+      const vertex = mesh.vert[vertexIndex];
 
-      const vertex =
-        mesh.vert[vertexIndex];
-
-      if (!vertex) {
-        continue;
-      }
+      if (!vertex) continue;
 
       positions.push(
         vertex.x,
@@ -472,32 +353,17 @@ function createBufferForGroup(gl, mesh, groupIndex) {
       let ny = 0;
       let nz = 1;
 
-      const normalIndex =
-        face.normalVertexIndex &&
-        face.normalVertexIndex[k];
+      const normalIndex = face.normalVertexIndex && face.normalVertexIndex[k];
 
-      if (
-        normalIndex &&
-        mesh.normal &&
-        mesh.normal[normalIndex]
-      ) {
-        const normal =
-          mesh.normal[normalIndex];
+      if (normalIndex && mesh.normal && mesh.normal[normalIndex]) {
 
+        const normal = mesh.normal[normalIndex];
         nx = normal.i;
         ny = normal.j;
         nz = normal.k;
-      } else if (
-        mesh.facetnorms &&
-        mesh.facetnorms[
-          face.normalFaceIndex
-        ]
-      ) {
-        const normal =
-          mesh.facetnorms[
-            face.normalFaceIndex
-          ];
+      } else if (mesh.facetnorms && mesh.facetnorms[face.normalFaceIndex]) {
 
+        const normal = mesh.facetnorms[face.normalFaceIndex];
         nx = normal.i;
         ny = normal.j;
         nz = normal.k;
@@ -509,38 +375,20 @@ function createBufferForGroup(gl, mesh, groupIndex) {
         nz
       );
 
-      const textureIndex =
-        face.textCoordsIndex &&
-        face.textCoordsIndex[k];
+      const textureIndex = face.textCoordsIndex && face.textCoordsIndex[k];
 
-      if (
-        textureIndex &&
-        mesh.textCoords &&
-        mesh.textCoords[textureIndex]
-      ) {
-        const uv =
-          mesh.textCoords[
-            textureIndex
-          ];
-
-        texcoords.push(
-          uv.u,
-          uv.v
-        );
+      if (textureIndex && mesh.textCoords && mesh.textCoords[textureIndex]) {
+        const uv = mesh.textCoords[textureIndex];
+        texcoords.push(uv.u, uv.v);
       } else {
-        texcoords.push(
-          0.0,
-          0.0
-        );
+        texcoords.push(0.0, 0.0);
       }
     }
   }
 
-  const positionData =
-    new Float32Array(positions);
+  const positionData = new Float32Array(positions);
 
-  const bufferInfo =
-    webglUtils.createBufferInfoFromArrays(
+  const bufferInfo = webglUtils.createBufferInfoFromArrays(
       gl,
       {
         position: {
@@ -560,8 +408,7 @@ function createBufferForGroup(gl, mesh, groupIndex) {
       }
     );
 
-  bufferInfo.positions =
-    positionData;
+  bufferInfo.positions = positionData;
 
   return bufferInfo;
 }
