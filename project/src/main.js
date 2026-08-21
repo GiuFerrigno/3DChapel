@@ -3,8 +3,6 @@
 let gui = null;
 let lastTime = 0;
 
-const SHADOW_TEXTURE_UNIT = 7;
-
 const vs = `#version 300 es
 in vec4 a_position;
 in vec3 a_normal;
@@ -20,17 +18,12 @@ out vec3 v_worldPosition;
 out vec2 v_texcoord;
 
 void main() {
-  vec4 worldPosition = u_world * a_position;
 
-  gl_Position =
-    u_projection *
-    u_view *
-    worldPosition;
+  vec4 worldPosition = u_world * a_position;
+  gl_Position = u_projection * u_view * worldPosition;
 
   v_worldPosition = worldPosition.xyz;
-  v_normal =
-    mat3(u_worldInverseTranspose) *
-    a_normal;
+  v_normal = mat3(u_worldInverseTranspose) * a_normal;
   v_texcoord = a_texcoord;
 }
 `;
@@ -59,27 +52,18 @@ uniform float u_pointLightRadius;
 out vec4 outColor;
 
 float calculatePointShadow() {
-  // Vettore dalla luce al frammento: sceglie automaticamente
-  // la faccia corretta della cubemap.
-  vec3 lightToFragment =
-    v_worldPosition -
-    u_pointLightPosition;
+  // Vettore dalla luce al frammento: sceglie automaticamente la faccia corretta della cubemap.
+  vec3 lightToFragment = v_worldPosition - u_pointLightPosition;
 
-  float currentDepth =
-    length(lightToFragment);
+  float currentDepth = length(lightToFragment);
 
-  // Se il frammento è oltre il far plane della cubemap,
-  // la shadow map non ha dati utili.
+  // Se il frammento è oltre il far plane della cubemap, la shadow map non ha dati utili.
   if (currentDepth >= u_shadowFarPlane) {
     return 1.0;
   }
 
   // Nel cubemap è memorizzata distanza / farPlane.
-  float storedDepth =
-    texture(
-      u_shadowCube,
-      lightToFragment
-    ).r * u_shadowFarPlane;
+  float storedDepth = texture(u_shadowCube, lightToFragment).r * u_shadowFarPlane;
 
   float bias = 0.02;
 
@@ -91,9 +75,7 @@ float calculatePointShadow() {
 }
 
 void main() {
-  vec4 baseColor =
-    texture(u_texture, v_texcoord) *
-    u_colorMult;
+  vec4 baseColor = texture(u_texture, v_texcoord) * u_colorMult;
 
   if (baseColor.a < 0.05) {
     discard;
@@ -101,26 +83,17 @@ void main() {
 
   vec3 normal = normalize(v_normal);
 
-  vec3 toLight =
-    u_pointLightPosition -
-    v_worldPosition;
+  vec3 toLight = u_pointLightPosition - v_worldPosition;
+  float distanceToLight = length(toLight);
+  vec3 lightDir = normalize(toLight);
 
-  float distanceToLight =
-    length(toLight);
+  float diffuse = max(dot(normal, lightDir), 0.0);
 
-  vec3 lightDir =
-    normalize(toLight);
-
-  float diffuse =
-    max(dot(normal, lightDir), 0.0);
-
-  float attenuation =
-    1.0 /
+  float attenuation = 1.0 /
     (
       1.0 +
       distanceToLight / u_pointLightRadius +
-      (distanceToLight * distanceToLight) /
-      (u_pointLightRadius * u_pointLightRadius)
+      (distanceToLight * distanceToLight) / (u_pointLightRadius * u_pointLightRadius)
     );
 
   float shadow = 1.0;
@@ -129,22 +102,11 @@ void main() {
     shadow = calculatePointShadow();
   }
 
-  vec3 directLight =
-    u_pointLightColor *
-    diffuse *
-    u_pointLightIntensity *
-    attenuation *
-    shadow;
+  vec3 directLight = u_pointLightColor * diffuse * u_pointLightIntensity * attenuation * shadow;
 
-  vec3 lightColor =
-    vec3(u_ambient) +
-    directLight;
+  vec3 lightColor = vec3(u_ambient) + directLight;
 
-  outColor =
-    vec4(
-      baseColor.rgb * lightColor,
-      baseColor.a
-    );
+  outColor = vec4(baseColor.rgb * lightColor, baseColor.a);
 }
 `;
 
@@ -197,16 +159,10 @@ uniform mat4 u_lightProjection;
 out vec3 v_worldPosition;
 
 void main() {
-  vec4 worldPosition =
-    u_world * a_position;
+  vec4 worldPosition = u_world * a_position;
+  v_worldPosition = worldPosition.xyz;
 
-  v_worldPosition =
-    worldPosition.xyz;
-
-  gl_Position =
-    u_lightProjection *
-    u_lightView *
-    worldPosition;
+  gl_Position = u_lightProjection * u_lightView * worldPosition;
 }
 `;
 
@@ -219,16 +175,10 @@ uniform vec3 u_lightPosition;
 uniform float u_shadowFarPlane;
 
 void main() {
-  float distanceFromLight =
-    length(
-      v_worldPosition -
-      u_lightPosition
-    );
+  float distanceFromLight = length(v_worldPosition - u_lightPosition);
 
   // Salva distanza lineare normalizzata nella depth texture.
-  gl_FragDepth =
-    distanceFromLight /
-    u_shadowFarPlane;
+  gl_FragDepth = distanceFromLight / u_shadowFarPlane;
 }
 `;
 
@@ -304,8 +254,6 @@ function render(time) {
   const shadowEnabled = state.advancedRendering.shadowMapping;
 
   const shadowData = shadowEnabled ? getPointLightShadowMatrices() : null;
-  //const light = shadowEnabled ? getLightMatrices() : null;
-
 
   if (shadowEnabled && shadowFramebuffer && shadowTexture) {
     renderShadowPass(shadowData);
@@ -356,7 +304,9 @@ async function main() {
   const canvas = document.getElementById("canvas");
   gl = canvas.getContext("webgl2");
 
-  if (!gl) { throw new Error("WebGL 2 non supportato"); }
+  if (!gl) { 
+    throw new Error("WebGL 2 non supportato"); 
+  }
 
   programInfo = webglUtils.createProgramInfo(gl, [vs, fs]);
   candleProgramInfo = webglUtils.createProgramInfo(gl, [candleVS, candleFS]);

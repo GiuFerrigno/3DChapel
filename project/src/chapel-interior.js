@@ -148,27 +148,6 @@ function drawChapelParts(view, projection, cameraPosition, shadowData = null) {
   gl.useProgram(programInfo.program);
 
   const candleLight = state.candles.light;
-
-  /*
-  const target = [0.0, 0.2, 0.6];
-
-  const spotDirection = [
-    target[0] - candleLight.position[0],
-    target[1] - candleLight.position[1],
-    target[2] - candleLight.position[2],
-  ];
-
-  const spotLength = Math.hypot(
-    spotDirection[0],
-    spotDirection[1],
-    spotDirection[2]
-  );
-
-  spotDirection[0] /= spotLength;
-  spotDirection[1] /= spotLength;
-  spotDirection[2] /= spotLength;
-
-  */
  
   const commonUniformsBase = {
     u_view: view,

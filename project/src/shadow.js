@@ -63,7 +63,6 @@ function createShadowFramebuffer(gl) {
     framebuffer
   );
 
-  // Attacchiamo provvisoriamente una faccia per verificare l'FBO.
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.DEPTH_ATTACHMENT,
@@ -103,8 +102,7 @@ function createShadowFramebuffer(gl) {
 }
 
 function getPointLightShadowMatrices() {
-  const position =
-    state.candles.light.position;
+  const position = state.candles.light.position;
 
   const projection = m4.perspective(
     Math.PI / 2.0,
@@ -158,24 +156,11 @@ function getPointLightShadowMatrices() {
 }
 
 function unbindShadowTextureEverywhere(gl) {
-  const maxUnits =
-    gl.getParameter(
-      gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS
-    );
+  const maxUnits = gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
 
-  for (
-    let i = 0;
-    i < maxUnits;
-    ++i
-  ) {
-    gl.activeTexture(
-      gl.TEXTURE0 + i
-    );
-
-    gl.bindTexture(
-      gl.TEXTURE_2D,
-      null
-    );
+  for (let i = 0; i < maxUnits; ++i) {
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
   gl.activeTexture(gl.TEXTURE0);
@@ -185,10 +170,7 @@ function unbindShadowTextureEverywhere(gl) {
 function renderShadowPass(shadowData) {
   unbindShadowTextureEverywhere(gl);
 
-  gl.bindFramebuffer(
-    gl.FRAMEBUFFER,
-    shadowFramebuffer
-  );
+  gl.bindFramebuffer( gl.FRAMEBUFFER, shadowFramebuffer);
 
   gl.viewport(
     0,
@@ -237,18 +219,10 @@ function renderShadowPass(shadowData) {
   );
 }
 
-function drawShadowChapelParts(
-  lightView,
-  lightProjection,
-  lightPosition
-) {
-  if (!chapelPartsList || !boxBufferInfo) {
-    return;
-  }
+function drawShadowChapelParts(lightView, lightProjection, lightPosition) {
+  if (!chapelPartsList || !boxBufferInfo) return;
 
-  gl.useProgram(
-    shadowProgramInfo.program
-  );
+  gl.useProgram(shadowProgramInfo.program);
 
   for (const part of chapelPartsList) {
     let world = m4.identity();
@@ -267,11 +241,7 @@ function drawShadowChapelParts(
       part.s[2]
     );
 
-    webglUtils.setBuffersAndAttributes(
-      gl,
-      shadowProgramInfo,
-      boxBufferInfo
-    );
+    webglUtils.setBuffersAndAttributes(gl, shadowProgramInfo, boxBufferInfo);
 
     webglUtils.setUniforms(
       shadowProgramInfo,
@@ -284,9 +254,6 @@ function drawShadowChapelParts(
       }
     );
 
-    webglUtils.drawBufferInfo(
-      gl,
-      boxBufferInfo
-    );
+    webglUtils.drawBufferInfo(gl, boxBufferInfo);
   }
 }

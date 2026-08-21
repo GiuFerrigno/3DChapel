@@ -102,7 +102,9 @@ async function initColumnOBJ(gl) {
   // Calcola le dimensioni reali dopo Unitize
   columnObjBounds = computeMeshBounds(mesh);
 
-  if (!columnObjBounds || columnObjBounds.height <= 0) { throw new Error("Altezza OBJ non valida"); }
+  if (!columnObjBounds || columnObjBounds.height <= 0) { 
+    throw new Error("Altezza OBJ non valida"); 
+  }
 
   // Altezza desiderata: uguale alla parete
   const targetHeight = COLUMN_DIMS.targetHeight;
