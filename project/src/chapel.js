@@ -147,11 +147,6 @@ function createChapelDrawContext(view, projection, cameraPosition, light = null)
 
     webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
 
-    if (shadowTexture) {
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, shadowTexture);
-    }
-
     webglUtils.setUniforms(programInfo, {
       ...commonUniforms,
       u_colorMult: part.color,

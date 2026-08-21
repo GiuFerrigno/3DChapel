@@ -303,11 +303,6 @@ function drawCandleUnlit(bufferInfo, world, view, projection, color, emissionStr
   gl.useProgram(program.program);
   webglUtils.setBuffersAndAttributes(gl, program, bufferInfo);
 
-  if (shadowTexture) {
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, shadowTexture);
-  }
-
   webglUtils.setUniforms(program, {
     u_world: world,
     u_view: view,
