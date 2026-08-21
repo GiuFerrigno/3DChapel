@@ -1,59 +1,74 @@
 "use strict";
 
 function createShadowFramebuffer(gl) {
-  const shadowTexture = gl.createTexture();
+  const shadowCube = gl.createTexture();
 
-  gl.bindTexture(gl.TEXTURE_2D, shadowTexture);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, shadowCube);
 
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.DEPTH_COMPONENT24,
-    shadowMapSize,
-    shadowMapSize,
-    0,
-    gl.DEPTH_COMPONENT,
-    gl.UNSIGNED_INT,
-    null
-  );
+  for (let face = 0; face < 6; ++face) {
+    gl.texImage2D(
+      gl.TEXTURE_CUBE_MAP_POSITIVE_X + face,
+      0,
+      gl.DEPTH_COMPONENT24,
+      shadowMapSize,
+      shadowMapSize,
+      0,
+      gl.DEPTH_COMPONENT,
+      gl.UNSIGNED_INT,
+      null
+    );
+  }
 
   gl.texParameteri(
-    gl.TEXTURE_2D,
+    gl.TEXTURE_CUBE_MAP,
     gl.TEXTURE_MIN_FILTER,
     gl.NEAREST
   );
 
   gl.texParameteri(
-    gl.TEXTURE_2D,
+    gl.TEXTURE_CUBE_MAP,
     gl.TEXTURE_MAG_FILTER,
     gl.NEAREST
   );
 
   gl.texParameteri(
-    gl.TEXTURE_2D,
+    gl.TEXTURE_CUBE_MAP,
     gl.TEXTURE_WRAP_S,
     gl.CLAMP_TO_EDGE
   );
 
   gl.texParameteri(
-    gl.TEXTURE_2D,
+    gl.TEXTURE_CUBE_MAP,
     gl.TEXTURE_WRAP_T,
     gl.CLAMP_TO_EDGE
   );
 
-  const shadowFramebuffer =
+  gl.texParameteri(
+    gl.TEXTURE_CUBE_MAP,
+    gl.TEXTURE_WRAP_R,
+    gl.CLAMP_TO_EDGE
+  );
+
+  gl.texParameteri(
+    gl.TEXTURE_CUBE_MAP,
+    gl.TEXTURE_COMPARE_MODE,
+    gl.NONE
+  );
+
+  const framebuffer =
     gl.createFramebuffer();
 
   gl.bindFramebuffer(
     gl.FRAMEBUFFER,
-    shadowFramebuffer
+    framebuffer
   );
 
+  // Attacchiamo provvisoriamente una faccia per verificare l'FBO.
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.DEPTH_ATTACHMENT,
-    gl.TEXTURE_2D,
-    shadowTexture,
+    gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+    shadowCube,
     0
   );
 
@@ -65,16 +80,14 @@ function createShadowFramebuffer(gl) {
       gl.FRAMEBUFFER
     );
 
-  if (
-    status !== gl.FRAMEBUFFER_COMPLETE
-  ) {
+  if (status !== gl.FRAMEBUFFER_COMPLETE) {
     throw new Error(
-      `Shadow framebuffer non completo: ${status}`
+      `Depth cubemap framebuffer non completo: ${status}`
     );
   }
 
   gl.bindTexture(
-    gl.TEXTURE_2D,
+    gl.TEXTURE_CUBE_MAP,
     null
   );
 
@@ -84,41 +97,63 @@ function createShadowFramebuffer(gl) {
   );
 
   return {
-    framebuffer: shadowFramebuffer,
-    texture: shadowTexture,
+    framebuffer,
+    texture: shadowCube,
   };
 }
 
-function getLightMatrices() {
-  const lightPosition =
+function getPointLightShadowMatrices() {
+  const position =
     state.candles.light.position;
 
-  const lightTarget = [
-    0.0,
-    1.5,
-    0.0,
-  ];
-
-  const lightView = m4.inverse(
-    m4.lookAt(
-      lightPosition,
-      lightTarget,
-      [0, 1, 0]
-    )
+  const projection = m4.perspective(
+    Math.PI / 2.0,
+    1.0,
+    SHADOW_NEAR,
+    SHADOW_FAR
   );
 
-  const lightProjection =
-    m4.perspective(
-      Math.PI / 3,
-      1.0,
-      0.1,
-      30.0
+  const faces = [
+    {
+      target: [position[0] + 1, position[1], position[2]],
+      up: [0, -1, 0],
+    },
+    {
+      target: [position[0] - 1, position[1], position[2]],
+      up: [0, -1, 0],
+    },
+    {
+      target: [position[0], position[1] + 1, position[2]],
+      up: [0, 0, 1],
+    },
+    {
+      target: [position[0], position[1] - 1, position[2]],
+      up: [0, 0, -1],
+    },
+    {
+      target: [position[0], position[1], position[2] + 1],
+      up: [0, -1, 0],
+    },
+    {
+      target: [position[0], position[1], position[2] - 1],
+      up: [0, -1, 0],
+    },
+  ];
+
+  const lightViews = faces.map((face) => {
+    const lightCamera = m4.lookAt(
+      position,
+      face.target,
+      face.up
     );
 
+    return m4.inverse(lightCamera);
+  });
+
   return {
-    lightView,
-    lightProjection,
-    lightPosition,
+    lightPosition: position,
+    lightProjection: projection,
+    lightViews,
   };
 }
 
@@ -147,58 +182,75 @@ function unbindShadowTextureEverywhere(gl) {
 }
 
 
-function renderShadowPass(lightView, lightProjection) {
-
+function renderShadowPass(shadowData) {
   unbindShadowTextureEverywhere(gl);
 
-  // Importante: la shadow texture non deve essere attiva mentre è attachment del framebuffer
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, shadowFramebuffer);
-  gl.viewport(0, 0, shadowMapSize, shadowMapSize);
-
-  gl.enable(gl.DEPTH_TEST);
-  gl.disable(gl.BLEND);
-  gl.depthMask(true);
-  gl.enable(gl.CULL_FACE);
-
-  gl.clearDepth(1.0);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
-
-  gl.useProgram(shadowProgramInfo.program);
-
-  drawShadowChapelParts(lightView, lightProjection);
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-}
-
-
-function drawShadowPart(part, world, lightView, lightProjection) {
-  if (!part || !part.bufferInfo) return;
-
-  webglUtils.setBuffersAndAttributes(gl, shadowProgramInfo, part.bufferInfo);
-
-  webglUtils.setUniforms(
-    shadowProgramInfo,
-    {
-      u_world: world,
-      u_lightView: lightView,
-      u_lightProjection: lightProjection,
-    }
+  gl.bindFramebuffer(
+    gl.FRAMEBUFFER,
+    shadowFramebuffer
   );
 
-  webglUtils.drawBufferInfo(gl, part.bufferInfo);
+  gl.viewport(
+    0,
+    0,
+    shadowMapSize,
+    shadowMapSize
+  );
+
+  gl.enable(gl.DEPTH_TEST);
+  gl.enable(gl.CULL_FACE);
+  gl.disable(gl.BLEND);
+  gl.depthMask(true);
+
+  gl.enable(gl.POLYGON_OFFSET_FILL);
+  gl.polygonOffset(1.0, 1.0);
+
+  gl.useProgram(
+    shadowProgramInfo.program
+  );
+
+  // Renderizza una faccia alla volta.
+  for (let face = 0; face < 6; ++face) {
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.DEPTH_ATTACHMENT,
+      gl.TEXTURE_CUBE_MAP_POSITIVE_X + face,
+      shadowTexture,
+      0
+    );
+
+    gl.clearDepth(1.0);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+
+    drawShadowChapelParts(
+      shadowData.lightViews[face],
+      shadowData.lightProjection,
+      shadowData.lightPosition
+    );
+  }
+
+  gl.disable(gl.POLYGON_OFFSET_FILL);
+
+  gl.bindFramebuffer(
+    gl.FRAMEBUFFER,
+    null
+  );
 }
 
-function drawShadowChapelParts(lightView, lightProjection) {
-  if (!chapelPartsList || !boxBufferInfo) return;
+function drawShadowChapelParts(
+  lightView,
+  lightProjection,
+  lightPosition
+) {
+  if (!chapelPartsList || !boxBufferInfo) {
+    return;
+  }
 
-  gl.useProgram(shadowProgramInfo.program);
+  gl.useProgram(
+    shadowProgramInfo.program
+  );
 
   for (const part of chapelPartsList) {
-    if (part.material !== "wood") continue;
-
     let world = m4.identity();
 
     world = m4.translate(
@@ -215,19 +267,26 @@ function drawShadowChapelParts(lightView, lightProjection) {
       part.s[2]
     );
 
-    webglUtils.setBuffersAndAttributes(gl, shadowProgramInfo, boxBufferInfo);
+    webglUtils.setBuffersAndAttributes(
+      gl,
+      shadowProgramInfo,
+      boxBufferInfo
+    );
 
     webglUtils.setUniforms(
       shadowProgramInfo,
       {
         u_world: world,
         u_lightView: lightView,
-        u_lightProjection:
-          lightProjection,
+        u_lightProjection: lightProjection,
+        u_lightPosition: lightPosition,
+        u_shadowFarPlane: SHADOW_FAR,
       }
     );
 
-    webglUtils.drawBufferInfo(gl, boxBufferInfo);
+    webglUtils.drawBufferInfo(
+      gl,
+      boxBufferInfo
+    );
   }
-
 }

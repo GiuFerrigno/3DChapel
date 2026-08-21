@@ -5,104 +5,146 @@ let lastTime = 0;
 
 const SHADOW_TEXTURE_UNIT = 7;
 
-const vs = `
-attribute vec4 a_position;
-attribute vec3 a_normal;
-attribute vec2 a_texcoord;
+const vs = `#version 300 es
+in vec4 a_position;
+in vec3 a_normal;
+in vec2 a_texcoord;
 
 uniform mat4 u_world;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 uniform mat4 u_worldInverseTranspose;
 
-uniform mat4 u_lightView;
-uniform mat4 u_lightProjection;
-
-varying vec3 v_normal;
-varying vec3 v_worldPosition;
-varying vec2 v_texcoord;
-varying vec4 v_shadowPosition;
+out vec3 v_normal;
+out vec3 v_worldPosition;
+out vec2 v_texcoord;
 
 void main() {
   vec4 worldPosition = u_world * a_position;
-  gl_Position = u_projection * u_view * worldPosition;
+
+  gl_Position =
+    u_projection *
+    u_view *
+    worldPosition;
 
   v_worldPosition = worldPosition.xyz;
-  v_normal = mat3(u_worldInverseTranspose) * a_normal;
+  v_normal =
+    mat3(u_worldInverseTranspose) *
+    a_normal;
   v_texcoord = a_texcoord;
-  v_shadowPosition = u_lightProjection * u_lightView * worldPosition;
 }
 `;
 
-const fs = `
-precision mediump float;
+const fs = `#version 300 es
+precision highp float;
 
-varying vec3 v_normal;
-varying vec3 v_worldPosition;
-varying vec2 v_texcoord;
-varying vec4 v_shadowPosition;
+in vec3 v_normal;
+in vec3 v_worldPosition;
+in vec2 v_texcoord;
 
 uniform vec4 u_colorMult;
 uniform sampler2D u_texture;
 
-uniform sampler2D u_shadowMap;
+uniform samplerCube u_shadowCube;
 uniform int u_shadowEnabled;
+uniform float u_shadowFarPlane;
 
 uniform float u_ambient;
+
 uniform vec3 u_pointLightPosition;
 uniform vec3 u_pointLightColor;
 uniform float u_pointLightIntensity;
 uniform float u_pointLightRadius;
 
-float calculateShadow() {
-  vec3 shadowCoords = v_shadowPosition.xyz / v_shadowPosition.w;
-  shadowCoords = shadowCoords * 0.5 + 0.5;
+out vec4 outColor;
 
-  if ( shadowCoords.x < 0.0 || shadowCoords.x > 1.0 || 
-       shadowCoords.y < 0.0 || shadowCoords.y > 1.0 || 
-       shadowCoords.z < 0.0 || shadowCoords.z > 1.0) {
+float calculatePointShadow() {
+  // Vettore dalla luce al frammento: sceglie automaticamente
+  // la faccia corretta della cubemap.
+  vec3 lightToFragment =
+    v_worldPosition -
+    u_pointLightPosition;
+
+  float currentDepth =
+    length(lightToFragment);
+
+  // Se il frammento è oltre il far plane della cubemap,
+  // la shadow map non ha dati utili.
+  if (currentDepth >= u_shadowFarPlane) {
     return 1.0;
   }
 
-  float storedDepth = texture2D(u_shadowMap, shadowCoords.xy).r;
-  float currentDepth = shadowCoords.z;
+  // Nel cubemap è memorizzata distanza / farPlane.
+  float storedDepth =
+    texture(
+      u_shadowCube,
+      lightToFragment
+    ).r * u_shadowFarPlane;
 
-  float bias = 0.005;
+  float bias = 0.02;
 
   if (currentDepth - bias > storedDepth) {
-    return 0.35;
+    return 0.55;
   }
 
   return 1.0;
 }
 
 void main() {
-  vec3 normal = normalize(v_normal);
-
-  vec3 toLight = u_pointLightPosition - v_worldPosition;
-  float distanceToLight = length(toLight);
-  vec3 lightDir = normalize(toLight);
-
-  float diffuse = max(dot(normal, lightDir), 0.0);
-
-  float attenuation = 1.0 / (1.0 + distanceToLight / u_pointLightRadius +
-                              (distanceToLight * distanceToLight) /
-                                (u_pointLightRadius * u_pointLightRadius));
-
-  float shadow = 1.0;
-
-  if (u_shadowEnabled == 1) {
-    shadow = calculateShadow();
-  }
-
-  vec3 lightColor = vec3(u_ambient) + u_pointLightColor * diffuse * u_pointLightIntensity * attenuation * shadow;
-  vec4 baseColor = texture2D(u_texture, v_texcoord) * u_colorMult;
+  vec4 baseColor =
+    texture(u_texture, v_texcoord) *
+    u_colorMult;
 
   if (baseColor.a < 0.05) {
     discard;
   }
 
-  gl_FragColor = vec4(baseColor.rgb * lightColor, baseColor.a);
+  vec3 normal = normalize(v_normal);
+
+  vec3 toLight =
+    u_pointLightPosition -
+    v_worldPosition;
+
+  float distanceToLight =
+    length(toLight);
+
+  vec3 lightDir =
+    normalize(toLight);
+
+  float diffuse =
+    max(dot(normal, lightDir), 0.0);
+
+  float attenuation =
+    1.0 /
+    (
+      1.0 +
+      distanceToLight / u_pointLightRadius +
+      (distanceToLight * distanceToLight) /
+      (u_pointLightRadius * u_pointLightRadius)
+    );
+
+  float shadow = 1.0;
+
+  if (u_shadowEnabled == 1) {
+    shadow = calculatePointShadow();
+  }
+
+  vec3 directLight =
+    u_pointLightColor *
+    diffuse *
+    u_pointLightIntensity *
+    attenuation *
+    shadow;
+
+  vec3 lightColor =
+    vec3(u_ambient) +
+    directLight;
+
+  outColor =
+    vec4(
+      baseColor.rgb * lightColor,
+      baseColor.a
+    );
 }
 `;
 
@@ -141,7 +183,9 @@ void main() {
 let shadowProgramInfo;
 let shadowFramebuffer;
 let shadowTexture;
-const shadowMapSize = 1024;
+const shadowMapSize = 2048;
+const SHADOW_NEAR = 0.1;
+const SHADOW_FAR = 20.0;
 
 const shadowVS = `#version 300 es
 in vec4 a_position;
@@ -150,15 +194,41 @@ uniform mat4 u_world;
 uniform mat4 u_lightView;
 uniform mat4 u_lightProjection;
 
+out vec3 v_worldPosition;
+
 void main() {
-  gl_Position = u_lightProjection * u_lightView * u_world * a_position;
+  vec4 worldPosition =
+    u_world * a_position;
+
+  v_worldPosition =
+    worldPosition.xyz;
+
+  gl_Position =
+    u_lightProjection *
+    u_lightView *
+    worldPosition;
 }
 `;
 
 const shadowFS = `#version 300 es
 precision highp float;
 
+in vec3 v_worldPosition;
+
+uniform vec3 u_lightPosition;
+uniform float u_shadowFarPlane;
+
 void main() {
+  float distanceFromLight =
+    length(
+      v_worldPosition -
+      u_lightPosition
+    );
+
+  // Salva distanza lineare normalizzata nella depth texture.
+  gl_FragDepth =
+    distanceFromLight /
+    u_shadowFarPlane;
 }
 `;
 
@@ -232,19 +302,16 @@ function render(time) {
   // ----------------------------------------
 
   const shadowEnabled = state.advancedRendering.shadowMapping;
-  const light = shadowEnabled ? getLightMatrices() : null;
+
+  const shadowData = shadowEnabled ? getPointLightShadowMatrices() : null;
+  //const light = shadowEnabled ? getLightMatrices() : null;
 
 
-  if (shadowEnabled && shadowFramebuffer && shadowTexture){
-    renderShadowPass(light.lightView, light.lightProjection);
-
-    // Ora siamo tornati al framebuffer principale
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, shadowTexture);
-  } else {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  if (shadowEnabled && shadowFramebuffer && shadowTexture) {
+    renderShadowPass(shadowData);
   }
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
   // ----------------------------------------
   // PASS 2: rendering principale
@@ -266,9 +333,9 @@ function render(time) {
   // Pass opaco
   beginOpaquePass(gl);
 
-  drawChapelOpaque(view, projection, cameraPosition, light);
-  drawChapelParts(view, projection, cameraPosition, light);
-  drawCandlesOpaque(view, projection, cameraPosition, light);
+  drawChapelOpaque(view, projection, cameraPosition, shadowData);
+  drawChapelParts(view, projection, cameraPosition, shadowData);
+  drawCandlesOpaque(view, projection, cameraPosition, shadowData);
 
   // Pass trasparente
   beginTransparentPass(gl);

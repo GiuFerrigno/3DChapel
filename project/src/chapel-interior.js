@@ -142,13 +142,34 @@ function buildChapelParts() {
   return parts;
 }
 
-function drawChapelParts(view, projection, cameraPosition, light = null) {
+function drawChapelParts(view, projection, cameraPosition, shadowData = null) {
   if (!chapelPartsList || !boxBufferInfo) return;
 
   gl.useProgram(programInfo.program);
 
   const candleLight = state.candles.light;
 
+  /*
+  const target = [0.0, 0.2, 0.6];
+
+  const spotDirection = [
+    target[0] - candleLight.position[0],
+    target[1] - candleLight.position[1],
+    target[2] - candleLight.position[2],
+  ];
+
+  const spotLength = Math.hypot(
+    spotDirection[0],
+    spotDirection[1],
+    spotDirection[2]
+  );
+
+  spotDirection[0] /= spotLength;
+  spotDirection[1] /= spotLength;
+  spotDirection[2] /= spotLength;
+
+  */
+ 
   const commonUniformsBase = {
     u_view: view,
     u_projection: projection,
@@ -160,13 +181,10 @@ function drawChapelParts(view, projection, cameraPosition, light = null) {
     u_pointLightRadius: candleLight.radius,
 
     u_ambient: state.ambient,
-    u_lightIntensity: 0.0,
 
-    u_lightView: light ? light.lightView : m4.identity(),
-    u_lightProjection: light ? light.lightProjection : m4.identity(),
-
-    u_shadowMap: shadowTexture,
-    u_shadowEnabled: light ? 1 : 0,    
+    u_shadowCube: shadowTexture,
+    u_shadowEnabled: shadowData ? 1 : 0,
+    u_shadowFarPlane: SHADOW_FAR,
   };
 
   for (const part of chapelPartsList) {
@@ -202,11 +220,6 @@ function drawChapelParts(view, projection, cameraPosition, light = null) {
     //TODO: è una fallback o qualcuno ha effettivamente questa texture?  
     } else if (part.material === "white") {
       texture = window.whiteTexture;
-    }
-
-    if (shadowTexture) {
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, shadowTexture);
     }
 
     webglUtils.setUniforms(
