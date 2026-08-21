@@ -312,6 +312,9 @@ async function main() {
   candleProgramInfo = webglUtils.createProgramInfo(gl, [candleVS, candleFS]);
   shadowProgramInfo = webglUtils.createProgramInfo(gl, [shadowVS, shadowFS]);
 
+  programInfo.uTextureLocation = gl.getUniformLocation(programInfo.program, "u_texture");
+  programInfo.uShadowCubeLocation = gl.getUniformLocation(programInfo.program, "u_shadowCube");
+
   const shadow = createShadowFramebuffer(gl);
   shadowFramebuffer = shadow.framebuffer;
   shadowTexture = shadow.texture;

@@ -161,7 +161,6 @@ function drawChapelParts(view, projection, cameraPosition, shadowData = null) {
 
     u_ambient: state.ambient,
 
-    u_shadowCube: shadowTexture,
     u_shadowEnabled: shadowData ? 1 : 0,
     u_shadowFarPlane: SHADOW_FAR,
   };
@@ -201,17 +200,23 @@ function drawChapelParts(view, projection, cameraPosition, shadowData = null) {
       texture = window.whiteTexture;
     }
 
-    webglUtils.setUniforms(
+    webglUtils.setUniforms( 
       programInfo,
       {
         ...commonUniformsBase,
         u_world: world,
-        u_worldInverseTranspose:
-          worldInverseTranspose,
+        u_worldInverseTranspose: worldInverseTranspose,
         u_colorMult: part.color,
-        u_texture: texture,
       }
     );
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(programInfo.uTextureLocation, 0);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, shadowTexture);
+    gl.uniform1i(programInfo.uShadowCubeLocation, 1);
 
     webglUtils.drawBufferInfo(gl, bufferInfo);
   }

@@ -119,8 +119,9 @@ function getChapelWorld() {
   return world;
 }
 
-function createChapelDrawContext(view, projection, cameraPosition, light = null) {
+function createChapelDrawContext(view, projection, cameraPosition, shadowData = null) {
   const world = getChapelWorld();
+
   const worldInverseTranspose = m4.transpose(m4.inverse(world));
 
   const candleLight = state.candles.light;
@@ -130,40 +131,58 @@ function createChapelDrawContext(view, projection, cameraPosition, light = null)
     u_view: view,
     u_projection: projection,
     u_worldInverseTranspose: worldInverseTranspose,
+
     u_viewWorldPosition: cameraPosition,
+
     u_pointLightPosition: candleLight.position,
     u_pointLightColor: candleLight.color,
     u_pointLightIntensity: candleLight.intensity,
     u_pointLightRadius: candleLight.radius,
+
     u_ambient: state.ambient,
     u_lightIntensity: 0.0,
-    u_lightView: light ? light.lightView : m4.identity(),
-    u_lightProjection: light ? light.lightProjection : m4.identity(),
+
+    u_shadowEnabled: shadowData ? 1 : 0,
+    u_shadowFarPlane: SHADOW_FAR,
   };
 
-  // TODO: ma i drawPart sono tutti uguali? forse si può generalizzare?
   function drawPart(part) {
     if (!part || !part.bufferInfo || !part.texture) return;
 
     webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
 
-    webglUtils.setUniforms(programInfo, {
-      ...commonUniforms,
-      u_colorMult: part.color,
-      u_texture: part.texture,
-    });
+    webglUtils.setUniforms(
+      programInfo,
+      {
+        ...commonUniforms,
+        u_colorMult: part.color,
+      }
+    );
+
+    // Unit 0 = texture standard 2D
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, part.texture);
+    gl.uniform1i(programInfo.uTextureLocation, 0);
+
+    // Unit 1 = depth cubemap
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, shadowTexture);
+    gl.uniform1i(programInfo.uShadowCubeLocation, 1);
 
     webglUtils.drawBufferInfo(gl, part.bufferInfo);
   }
 
-  return { drawPart, parts: chapelParts,};
+  return {
+    drawPart,
+    parts: chapelParts,
+  };
 }
 
 
-function drawChapelOpaque(view, projection, cameraPosition, light = null) {
+function drawChapelOpaque(view, projection, cameraPosition, shadowData = null) {
   gl.useProgram(programInfo.program);
 
-  const chapel = createChapelDrawContext(view, projection, cameraPosition, light);
+  const chapel = createChapelDrawContext(view, projection, cameraPosition, shadowData);
 
   chapel.drawPart(chapel.parts.floor);
   chapel.drawPart(chapel.parts.walls);
