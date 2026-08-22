@@ -1,7 +1,5 @@
 "use strict";
 
-// TODO: aggiungere qui i path degli obj?
-
 const TEXTURE_PATHS = {
   floor: "../textures/marble.jpg",
   floorTiles: "../textures/floorTiles.jpg",

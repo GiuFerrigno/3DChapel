@@ -186,10 +186,8 @@ function setupGUI() {
   gui = new dat.GUI();
 
   const cameraFolder = gui.addFolder("Camera");
-  cameraFolder.add(state, "cameraYaw", -3.14, 3.14, 0.01).name("Yaw");
-  cameraFolder.add(state, "cameraPitch", 0.1, 1.2, 0.01).name("Pitch");
-  cameraFolder.add(state, "cameraYaw", -Math.PI, Math.PI, 0.01).name("Look left/right");
-  cameraFolder.add(state, "cameraPitch", -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05, 0.0).name("Look up/down");
+  cameraFolder.add(state, "cameraYaw", -Math.PI, Math.PI, 0.01).name("Yaw");
+  cameraFolder.add(state, "cameraPitch", -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05, 0.1).name("Pitch");
   cameraFolder.add(state.cameraPosition, "1", 0.5, 3.0, 0.05).name("Eye height");
   
   const lightFolder = gui.addFolder("Point light");
@@ -263,25 +261,16 @@ function render(time) {
     renderShadowPass(shadowData);
   }
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
   // ----------------------------------------
   // PASS 2: rendering principale
   // ----------------------------------------
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
   gl.viewport(0, 0, canvasWidth, canvasHeight);
-
-  gl.enable(gl.DEPTH_TEST);
-  gl.enable(gl.CULL_FACE);
-  gl.disable(gl.BLEND);
-  gl.depthMask(true);
 
   gl.clearColor(0.86, 0.92, 0.98, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  // TODO: controllare se quelli prima servono
   // Pass opaco
   beginOpaquePass(gl);
 
@@ -297,9 +286,6 @@ function render(time) {
   drawDust(view, projection, time);
 
   endTransparentPass(gl);
-
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, null);
 
   requestAnimationFrame(render);
 }

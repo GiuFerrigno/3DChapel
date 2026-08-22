@@ -1,7 +1,5 @@
 "use strict";
 
-//TODO: controllare che ci vogliano effettivamente tutti sti controlli 
-
 const pointerState = {
   active: false,
   pointerId: null,
@@ -11,24 +9,24 @@ const pointerState = {
 
 const POINTER_SENSITIVITY = 0.01;
 const ZOOM_SENSITIVITY = 0.01;
+
 const MIN_CAMERA_PITCH = -Math.PI / 2 + 0.05;
 const MAX_CAMERA_PITCH = Math.PI / 2 - 0.05;
-const MIN_CAMERA_DIST = 3.5;
-const MAX_CAMERA_DIST = 20.0;
+
 const BASE_MOVE_SPEED = 2.5;
 const FAST_MOVE_SPEED = 5.0;
-const VERTICAL_MOVE_SPEED = 2.5;
-const MIN_CAMERA_HEIGHT = 0.5;
-const MAX_CAMERA_HEIGHT = 3.0;
 
-// Per evitare che la camera esca dalla cappella
+// Margine dai muri, per impedire alla camera di uscire dalla cappella
 const CAMERA_MARGIN = 0.15;
+
 const CHAPEL_MIN_X = -4.0 + CAMERA_MARGIN;
-const CHAPEL_MAX_X =  4.0 - CAMERA_MARGIN;
+const CHAPEL_MAX_X = 4.0 - CAMERA_MARGIN;
+
 const CHAPEL_MIN_Z = -7.0 + CAMERA_MARGIN;
-const CHAPEL_MAX_Z =  7.0 - CAMERA_MARGIN;
+const CHAPEL_MAX_Z = 7.0 - CAMERA_MARGIN;
+
 const CAMERA_MIN_Y = 0.8;
-const CAMERA_MAX_Y = 3.8;
+const CAMERA_MAX_Y = 3.0;
 
 function keepCameraInsideChapel() {
   state.cameraPosition[0] = clamp(
@@ -79,7 +77,12 @@ function initPointerControls(canvas) {
 
     state.cameraYaw += dx * POINTER_SENSITIVITY;
     state.cameraPitch -= dy * POINTER_SENSITIVITY;
-    state.cameraPitch = clamp(state.cameraPitch, -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05);
+
+    state.cameraPitch = clamp(
+      state.cameraPitch,
+      MIN_CAMERA_PITCH,
+      MAX_CAMERA_PITCH
+    );
 
     pointerState.lastX = e.clientX;
     pointerState.lastY = e.clientY;
@@ -103,20 +106,25 @@ function initPointerControls(canvas) {
     e.preventDefault();
   });
 
-  canvas.addEventListener("wheel", (e) => {
-    const amount = e.deltaY * 0.01;
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      const amount = e.deltaY * ZOOM_SENSITIVITY;
 
-    const forward = [
-      Math.sin(state.cameraYaw),
-      0,
-      -Math.cos(state.cameraYaw),
-    ];
+      const forward = [
+        Math.sin(state.cameraYaw),
+        0,
+        -Math.cos(state.cameraYaw),
+      ];
 
-    state.cameraPosition[0] += forward[0] * amount;
-    state.cameraPosition[2] += forward[2] * amount;
+      state.cameraPosition[0] += forward[0] * amount;
+      state.cameraPosition[2] += forward[2] * amount;
 
-    e.preventDefault();
-  }, { passive: false });
+      keepCameraInsideChapel();
+      e.preventDefault();
+    },
+    { passive: false }
+  );
 
   canvas.addEventListener("contextmenu", (e) => {
     e.preventDefault();
@@ -149,7 +157,6 @@ function updateKeyboardMovement(dt) {
   const speed = (keys.ShiftLeft || keys.ShiftRight) ? FAST_MOVE_SPEED : BASE_MOVE_SPEED;
 
   const step = speed * dt;
-  const verticalStep = VERTICAL_MOVE_SPEED * dt;
 
   const forward = [
     Math.sin(state.cameraYaw),
@@ -182,12 +189,6 @@ function updateKeyboardMovement(dt) {
     state.cameraPosition[0] += right[0] * step;
     state.cameraPosition[2] += right[2] * step;
   }
-  
-  state.cameraPosition[1] = clamp(
-    state.cameraPosition[1],
-    MIN_CAMERA_HEIGHT,
-    MAX_CAMERA_HEIGHT
-  );
 
   keepCameraInsideChapel();
 }

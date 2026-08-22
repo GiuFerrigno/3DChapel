@@ -194,9 +194,7 @@ function drawChapelParts(view, projection, cameraPosition, shadowData = null) {
       texture = window.woodTexture;
     } else if (part.material === "floor") {
       texture = window.floorTilesTexture;
-
-    //TODO: è una fallback o qualcuno ha effettivamente questa texture?  
-    } else if (part.material === "white") {
+    } else {
       texture = window.whiteTexture;
     }
 
