@@ -204,10 +204,14 @@ function setupGUI() {
   const guiActions = {
     resetCamera() {
       resetCamera();
+    },
+    resetLight(){
+      resetLight();
     }
   };
 
   cameraFolder.add(guiActions, "resetCamera").name("Reset camera");
+  lightFolder.add(guiActions, "resetLight").name("Reset light");
 }
 
 function resizeCanvas() {

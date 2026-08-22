@@ -105,6 +105,12 @@ function resetCamera() {
   keepCameraInsideChapel();
 }
 
+function resetLight() {
+  state.ambient = LIGHT_DEFAULTS.ambient;
+  state.candles.light.baseIntensity = LIGHT_DEFAULTS.baseIntensity;
+  state.candles.light.radius = LIGHT_DEFAULTS.radius;
+}
+
 // Crea cubo
 function createUnitCubeArrays() {
   // Cubo unitario centrato in (0,0,0), lati da -0.5 a +0.5

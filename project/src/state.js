@@ -14,6 +14,8 @@ const CAMERA_DEFAULTS = {
 // Light defaults
 const LIGHT_DEFAULTS = {
   ambient: 0.03,
+  baseIntensity: 3.8,
+  radius: 7.0, 
 };
 
 // Window effect defaults
@@ -60,9 +62,9 @@ const state = {
     light: {
       position: [0.0, 1.85, -5.4],
       color: [1.0, 0.48, 0.12],
-      baseIntensity: 3.8, 
+      baseIntensity: LIGHT_DEFAULTS.baseIntensity, 
       intensity: 2.6,
-      radius: 7.0,
+      radius: LIGHT_DEFAULTS.radius,
     },
 
     smoke: {
