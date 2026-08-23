@@ -21,7 +21,7 @@ html, body {
   background: linear-gradient(#b9d6ea, #dfe9f2);
 }
 
-#hud {
+.hud {
   position: absolute;
   top: 12px;
   left: 12px;
@@ -36,14 +36,75 @@ html, body {
   pointer-events: none;
 }
 
-#hud h1 {
+.hud h1 {
   margin: 0 0 6px;
   font-size: 16px;
   font-weight: 700;
 }
 
-#hud p {
+.hud p {
   margin: 4px 0;
+}
+
+#hudDesktop {
+  display: block;
+}
+
+#hudMobile {
+  display: none;
+}
+
+/* Telefono o tablet touch, oppure viewport stretta */
+@media (max-width: 768px), (pointer: coarse) {
+  #hudDesktop {
+    display: none;
+  }
+
+  #hudMobile {
+    display: block;
+    top: 12px;
+    left: 12px;
+    max-width: 230px;
+    padding: 10px 14px;
+  }
+
+  .hud h1 {
+    margin-bottom: 7px;
+    font-size: 17px;
+  }
+
+  .hud p {
+    margin: 4px 0;
+    font-size: 13px;
+  }
+}
+
+.joystick {
+  position: fixed;
+  width: 120px;
+  height: 120px;
+  border: 2px solid rgba(255, 220, 160, 0.45);
+  border-radius: 50%;
+  background: rgba(30, 20, 10, 0.20);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+}
+
+.joystick.hidden {
+  display: none;
+}
+
+.joystick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 205, 110, 0.55);
+  border: 1px solid rgba(255, 240, 200, 0.7);
 }
 
 .dg {

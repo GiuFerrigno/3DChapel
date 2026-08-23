@@ -2,7 +2,7 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 viewport-fit=cover"/>
     <title>Virtual Chapel</title>
     <link rel="icon" type="image/png" href="../textures/icon.png">
     <link rel="stylesheet" href="./style.css" />
@@ -11,13 +11,22 @@
     <div id="app">
       <canvas id="canvas"></canvas>
 
-      <div id="hud">
+      <div id="hudDesktop" class="hud">
         <h1>Virtual Chapel</h1>
-        <p>Mouse drag: ruota la camera</p>
-        <p>Rotella: zoom </p>
-        <p>W A S D: avanti, sinistra, indietro, destra</p>
-        <p>Shift: aumenta velocità di movimento</p>
-        <p>Touch: ???</p>
+        <p>Trascina il mouse: guarda attorno</p>
+        <p>Rotella: zoom avanti / indietro</p>
+        <p>W A S D: movimento</p>
+        <p>Shift: aumenta velocità</p>
+      </div>
+
+      <div id="hudMobile" class="hud">
+        <h1>Virtual Chapel</h1>
+        <p>Touch sinistro: movimento</p>
+        <p>Touch destro: guarda attorno</p>
+      </div>
+
+      <div id="moveJoystick" class="joystick hidden">
+        <div id="moveJoystickKnob" class="joystick-knob"></div>
       </div>
     </div>
 
