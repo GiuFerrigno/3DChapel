@@ -3,26 +3,38 @@
 let chapelPartsList = null;
 let boxBufferInfo = null;
 
+/**
+ * Inizializza le parti procedurali della cappella:
+ * - panche
+ * - colonne
+ * - altare
+ * - altri elementi generati via codice
+ *
+ * Crea inoltre il cubo unitario usato come geometria di base
+ */
 function initProceduralChapelParts(gl) {
-  // 1. Costruisce la lista delle parti:
-  // panche, colonne, altare, ecc.
   chapelPartsList = buildChapelParts();
 
-  // 2. Crea il cubo unitario una sola volta
   if (!boxBufferInfo) {
     const cubeArrays = createUnitCubeArrays();
-
     boxBufferInfo = webglUtils.createBufferInfoFromArrays(gl, cubeArrays);
   }
-
 }
 
+/**
+ * Inizializza tutta la geometria della scena:
+ * - cappella principale (OBJ)
+ * - parti procedurali (panche, altare)
+ * - colonne (OBJ)
+ * - targa con foto (OBJ)
+ * - candele (fiamme, stoppini, fumo)
+ * - particelle di polvere atmosferica
+ */
 async function initSceneGeometry(gl) {
-  await loadChapelMeshes(gl);    // cappella da OBJ
-  initProceduralChapelParts(gl); // parti procedurali
-  await initColumnOBJ(gl);       // colonne da OBJ
-  await loadPlaqueMeshes(gl);    // targa da OBJ
-  initCandles(gl);
-  initDust(gl, state.dust.count);
+  await loadChapelMeshes(gl);        
+  initProceduralChapelParts(gl);     
+  await initColumnOBJ(gl);           
+  await loadPlaqueMeshes(gl);        
+  initCandles(gl);                   
+  initDust(gl, state.dust.count);    
 }
-

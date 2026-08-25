@@ -3,6 +3,10 @@
 let gui = null;
 let lastTime = 0;
 
+// -----------------------------------------------------------------------------
+// Shader principali
+// -----------------------------------------------------------------------------
+
 const vs = `#version 300 es
 in vec4 a_position;
 in vec3 a_normal;
@@ -18,7 +22,6 @@ out vec3 v_worldPosition;
 out vec2 v_texcoord;
 
 void main() {
-
   vec4 worldPosition = u_world * a_position;
   gl_Position = u_projection * u_view * worldPosition;
 
@@ -52,19 +55,14 @@ uniform float u_pointLightRadius;
 out vec4 outColor;
 
 float calculatePointShadow() {
-  // Vettore dalla luce al frammento: sceglie automaticamente la faccia corretta della cubemap.
   vec3 lightToFragment = v_worldPosition - u_pointLightPosition;
-
   float currentDepth = length(lightToFragment);
 
-  // Se il frammento è oltre il far plane della cubemap, la shadow map non ha dati utili.
   if (currentDepth >= u_shadowFarPlane) {
     return 1.0;
   }
 
-  // Nel cubemap è memorizzata distanza / farPlane.
   float storedDepth = texture(u_shadowCube, lightToFragment).r * u_shadowFarPlane;
-
   float bias = 0.02;
 
   if (currentDepth - bias > storedDepth) {
@@ -89,12 +87,11 @@ void main() {
 
   float diffuse = max(dot(normal, lightDir), 0.0);
 
-  float attenuation = 1.0 /
-    (
-      1.0 +
-      distanceToLight / u_pointLightRadius +
-      (distanceToLight * distanceToLight) / (u_pointLightRadius * u_pointLightRadius)
-    );
+  float attenuation = 1.0 / (
+    1.0 +
+    distanceToLight / u_pointLightRadius +
+    (distanceToLight * distanceToLight) / (u_pointLightRadius * u_pointLightRadius)
+  );
 
   float shadow = 1.0;
 
@@ -103,12 +100,15 @@ void main() {
   }
 
   vec3 directLight = u_pointLightColor * diffuse * u_pointLightIntensity * attenuation * shadow;
-
   vec3 lightColor = vec3(u_ambient) + directLight;
 
   outColor = vec4(baseColor.rgb * lightColor, baseColor.a);
 }
 `;
+
+// -----------------------------------------------------------------------------
+// Shader candele (fiamma, stoppino, fumo)
+// -----------------------------------------------------------------------------
 
 const candleVS = `
 attribute vec4 a_position;
@@ -142,9 +142,14 @@ void main() {
 }
 `;
 
+// -----------------------------------------------------------------------------
+// Shader shadow map (cubemap per point light)
+// -----------------------------------------------------------------------------
+
 let shadowProgramInfo;
 let shadowFramebuffer;
 let shadowTexture;
+
 const shadowMapSize = 2048;
 const SHADOW_NEAR = 0.1;
 const SHADOW_FAR = 20.0;
@@ -176,11 +181,13 @@ uniform float u_shadowFarPlane;
 
 void main() {
   float distanceFromLight = length(v_worldPosition - u_lightPosition);
-
-  // Salva distanza lineare normalizzata nella depth texture.
   gl_FragDepth = distanceFromLight / u_shadowFarPlane;
 }
 `;
+
+// -----------------------------------------------------------------------------
+// GUI
+// -----------------------------------------------------------------------------
 
 function setupGUI() {
   gui = new dat.GUI();
@@ -189,7 +196,7 @@ function setupGUI() {
   cameraFolder.add(state, "cameraYaw", -Math.PI, Math.PI, 0.01).name("Yaw");
   cameraFolder.add(state, "cameraPitch", -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05, 0.1).name("Pitch");
   cameraFolder.add(state.cameraPosition, "1", 0.5, 3.0, 0.05).name("Eye height");
-  
+
   const lightFolder = gui.addFolder("Point light");
   lightFolder.add(state, "ambient", 0.0, 1.0, 0.01).name("Ambient");
   lightFolder.add(state.candles.light, "baseIntensity", 0.0, 8.0, 0.01).name("Intensity");
@@ -203,14 +210,18 @@ function setupGUI() {
     resetCamera() {
       resetCamera();
     },
-    resetLight(){
+    resetLight() {
       resetLight();
-    }
+    },
   };
 
   cameraFolder.add(guiActions, "resetCamera").name("Reset camera");
   lightFolder.add(guiActions, "resetLight").name("Reset light");
 }
+
+// -----------------------------------------------------------------------------
+// Resize e loop
+// -----------------------------------------------------------------------------
 
 function resizeCanvas() {
   webglUtils.resizeCanvasToDisplaySize(gl.canvas, window.devicePixelRatio || 1);
@@ -231,39 +242,28 @@ function render(time) {
   const canvasHeight = gl.canvas.height;
   const aspect = canvasWidth / canvasHeight;
 
-  const projection = m4.perspective(
-    Math.PI / 4,
-    aspect,
-    0.1,
-    100.0
-  );
+  const projection = m4.perspective(Math.PI / 4, aspect, 0.1, 100.0);
 
   const cameraPosition = getCameraPosition();
   const cameraTarget = getCameraTarget();
 
-  const camera = m4.lookAt(
-    cameraPosition,
-    cameraTarget,
-    [0, 1, 0]
-  );
-
+  const camera = m4.lookAt(cameraPosition, cameraTarget, [0, 1, 0]);
   const view = m4.inverse(camera);
 
-  // ----------------------------------------
-  // PASS 1: shadow map
-  // ----------------------------------------
+  // ------------------------------------------------
+  // PASS 1: shadow map (cubemap per point light)
+  // ------------------------------------------------
 
   const shadowEnabled = state.advancedRendering.shadowMapping;
-
   const shadowData = shadowEnabled ? getPointLightShadowMatrices() : null;
 
   if (shadowEnabled && shadowFramebuffer && shadowTexture) {
     renderShadowPass(shadowData);
   }
 
-  // ----------------------------------------
+  // ------------------------------------------------
   // PASS 2: rendering principale
-  // ----------------------------------------
+  // ------------------------------------------------
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.viewport(0, 0, canvasWidth, canvasHeight);
@@ -271,18 +271,18 @@ function render(time) {
   gl.clearColor(0.86, 0.92, 0.98, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  // Pass opaco
+  // Opaque
   beginOpaquePass(gl);
 
   drawChapelOpaque(view, projection, cameraPosition, shadowData);
   drawChapelParts(view, projection, cameraPosition, shadowData);
   drawCandlesOpaque(view, projection, cameraPosition, shadowData);
 
-  // Pass trasparente
+  // Transparent
   beginTransparentPass(gl);
 
   drawChapelTransparent(view, projection, cameraPosition);
-  drawCandlesTransparent(view, projection, cameraPosition);
+  drawCandlesTransparent(view, projection);
   drawDust(view, projection, time);
 
   endTransparentPass(gl);
@@ -290,12 +290,16 @@ function render(time) {
   requestAnimationFrame(render);
 }
 
+// -----------------------------------------------------------------------------
+// Inizializzazione
+// -----------------------------------------------------------------------------
+
 async function main() {
   const canvas = document.getElementById("canvas");
   gl = canvas.getContext("webgl2");
 
-  if (!gl) { 
-    throw new Error("WebGL 2 non supportato"); 
+  if (!gl) {
+    throw new Error("WebGL 2 non supportato");
   }
 
   programInfo = webglUtils.createProgramInfo(gl, [vs, fs]);

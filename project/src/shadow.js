@@ -1,11 +1,19 @@
 "use strict";
 
+const CUBE_FACE_COUNT = 6;
+const SHADOW_CUBE_FACE_SIZE = Math.PI / 2;
+
+/**
+ * Crea una depth cubemap e il framebuffer usato per le ombre
+ * omnidirezionali della luce puntiforme
+ */
 function createShadowFramebuffer(gl) {
   const shadowCube = gl.createTexture();
 
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, shadowCube);
 
-  for (let face = 0; face < 6; ++face) {
+  // Ogni faccia conserva la profondità vista dalla luce in una direzione
+  for (let face = 0; face < CUBE_FACE_COUNT; ++face) {
     gl.texImage2D(
       gl.TEXTURE_CUBE_MAP_POSITIVE_X + face,
       0,
@@ -49,20 +57,18 @@ function createShadowFramebuffer(gl) {
     gl.CLAMP_TO_EDGE
   );
 
+  // La cubemap viene letta manualmente come profondità nello shader
   gl.texParameteri(
     gl.TEXTURE_CUBE_MAP,
     gl.TEXTURE_COMPARE_MODE,
     gl.NONE
   );
 
-  const framebuffer =
-    gl.createFramebuffer();
+  const framebuffer = gl.createFramebuffer();
 
-  gl.bindFramebuffer(
-    gl.FRAMEBUFFER,
-    framebuffer
-  );
+  gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 
+  // Un attachment temporaneo serve per verificare che il framebuffer sia valido
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.DEPTH_ATTACHMENT,
@@ -74,26 +80,14 @@ function createShadowFramebuffer(gl) {
   gl.drawBuffers([gl.NONE]);
   gl.readBuffer(gl.NONE);
 
-  const status =
-    gl.checkFramebufferStatus(
-      gl.FRAMEBUFFER
-    );
+  const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
 
   if (status !== gl.FRAMEBUFFER_COMPLETE) {
-    throw new Error(
-      `Depth cubemap framebuffer non completo: ${status}`
-    );
+    throw new Error(`Depth cubemap framebuffer non completo: ${status}`);
   }
 
-  gl.bindTexture(
-    gl.TEXTURE_CUBE_MAP,
-    null
-  );
-
-  gl.bindFramebuffer(
-    gl.FRAMEBUFFER,
-    null
-  );
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
   return {
     framebuffer,
@@ -101,76 +95,58 @@ function createShadowFramebuffer(gl) {
   };
 }
 
+/**
+ * Calcola le sei viste per la shadow cubemap di una point light
+ * Ogni faccia ha FOV di 90°
+ */
 function getPointLightShadowMatrices() {
-  const position = state.candles.light.position;
+  const lightPosition = state.candles.light.position;
 
   const projection = m4.perspective(
-    Math.PI / 2.0,
+    SHADOW_CUBE_FACE_SIZE,
     1.0,
     SHADOW_NEAR,
     SHADOW_FAR
   );
 
-  const faces = [
-    {
-      target: [position[0] + 1, position[1], position[2]],
-      up: [0, -1, 0],
-    },
-    {
-      target: [position[0] - 1, position[1], position[2]],
-      up: [0, -1, 0],
-    },
-    {
-      target: [position[0], position[1] + 1, position[2]],
-      up: [0, 0, 1],
-    },
-    {
-      target: [position[0], position[1] - 1, position[2]],
-      up: [0, 0, -1],
-    },
-    {
-      target: [position[0], position[1], position[2] + 1],
-      up: [0, -1, 0],
-    },
-    {
-      target: [position[0], position[1], position[2] - 1],
-      up: [0, -1, 0],
-    },
+  const faceDirections = [
+    { direction: [1, 0, 0], up: [0, -1, 0] },
+    { direction: [-1, 0, 0], up: [0, -1, 0] },
+    { direction: [0, 1, 0], up: [0, 0, 1] },
+    { direction: [0, -1, 0], up: [0, 0, -1] },
+    { direction: [0, 0, 1], up: [0, -1, 0] },
+    { direction: [0, 0, -1], up: [0, -1, 0] },
   ];
 
-  const lightViews = faces.map((face) => {
+  const lightViews = faceDirections.map(({ direction, up }) => {
+    const target = [
+      lightPosition[0] + direction[0],
+      lightPosition[1] + direction[1],
+      lightPosition[2] + direction[2],
+    ];
+
     const lightCamera = m4.lookAt(
-      position,
-      face.target,
-      face.up
+      lightPosition,
+      target,
+      up
     );
 
     return m4.inverse(lightCamera);
   });
 
   return {
-    lightPosition: position,
+    lightPosition,
     lightProjection: projection,
     lightViews,
   };
 }
 
-function unbindShadowTextureEverywhere(gl) {
-  const maxUnits = gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
-
-  for (let i = 0; i < maxUnits; ++i) {
-    gl.activeTexture(gl.TEXTURE0 + i);
-    gl.bindTexture(gl.TEXTURE_2D, null);
-  }
-
-  gl.activeTexture(gl.TEXTURE0);
-}
-
-
+/**
+ * Aggiorna le sei facce della depth cubemap
+ * Polygon offset limita l'auto-ombreggiamento causato dalla precisione depth
+ */
 function renderShadowPass(shadowData) {
-  unbindShadowTextureEverywhere(gl);
-
-  gl.bindFramebuffer( gl.FRAMEBUFFER, shadowFramebuffer);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, shadowFramebuffer);
 
   gl.viewport(
     0,
@@ -187,12 +163,9 @@ function renderShadowPass(shadowData) {
   gl.enable(gl.POLYGON_OFFSET_FILL);
   gl.polygonOffset(1.0, 1.0);
 
-  gl.useProgram(
-    shadowProgramInfo.program
-  );
+  gl.useProgram(shadowProgramInfo.program);
 
-  // Renderizza una faccia alla volta.
-  for (let face = 0; face < 6; ++face) {
+  for (let face = 0; face < CUBE_FACE_COUNT; ++face) {
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.DEPTH_ATTACHMENT,
@@ -213,12 +186,12 @@ function renderShadowPass(shadowData) {
 
   gl.disable(gl.POLYGON_OFFSET_FILL);
 
-  gl.bindFramebuffer(
-    gl.FRAMEBUFFER,
-    null
-  );
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 }
 
+/**
+ * Renderizza gli elementi cuboidali della cappella nel pass di profondità
+ */
 function drawShadowChapelParts(lightView, lightProjection, lightPosition) {
   if (!chapelPartsList || !boxBufferInfo) return;
 
@@ -229,16 +202,16 @@ function drawShadowChapelParts(lightView, lightProjection, lightPosition) {
 
     world = m4.translate(
       world,
-      part.t[0],
-      part.t[1],
-      part.t[2]
+      part.position[0],
+      part.position[1],
+      part.position[2]
     );
 
     world = m4.scale(
       world,
-      part.s[0],
-      part.s[1],
-      part.s[2]
+      part.scale[0],
+      part.scale[1],
+      part.scale[2]
     );
 
     webglUtils.setBuffersAndAttributes(gl, shadowProgramInfo, boxBufferInfo);

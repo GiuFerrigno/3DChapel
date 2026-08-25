@@ -8,7 +8,7 @@ const TEXTURE_PATHS = {
   column: "../textures/column.jpg",
   stainedGlass: "../textures/stained-glass.png",
   circularStainedGlass: "../textures/circular-glass.png",
-  simpleGlass: "../textures/stained-glass-simple.png", 
+  simpleGlass: "../textures/stained-glass-simple.png",
   door: "../textures/door.jpg",
   ceiling: "../textures/ceiling.jpg",
   plaque: "../textures/targa.png",
@@ -19,24 +19,30 @@ const TEXTURE_DEFAULTS = {
   potSize: 1024,
   placeholderPixel: [255, 255, 255, 255],
   whitePixel: [255, 255, 255, 255],
-  defaultMeshPixel: [220, 220, 220, 255],
 };
 
-const UV_DEFAULTS = {
-  offset: 1.0,
-  scale: 0.5,
-};
-
-const FALLBACK_NORMAL = {
-  x: 0,
-  y: 1,
-  z: 0,
-};
+function createSolidTexture(gl, pixel) {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    1,
+    1,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    new Uint8Array(pixel)
+  );
+  return tex;
+}
 
 function loadTexturePOT(gl, url, size = TEXTURE_DEFAULTS.potSize) {
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
 
+  // Placeholder bianco finché l’immagine non è caricata
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
@@ -62,7 +68,14 @@ function loadTexturePOT(gl, url, size = TEXTURE_DEFAULTS.potSize) {
 
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      canvas
+    );
 
     gl.generateMipmap(gl.TEXTURE_2D);
 
@@ -76,6 +89,7 @@ function loadTexturePOT(gl, url, size = TEXTURE_DEFAULTS.potSize) {
 }
 
 async function loadSceneTextures(gl) {
+  // Texture di base
   window.whiteTexture = createSolidTexture(gl, TEXTURE_DEFAULTS.whitePixel);
 
   window.floorTexture = loadTexturePOT(gl, TEXTURE_PATHS.floor, TEXTURE_DEFAULTS.potSize);
@@ -91,18 +105,17 @@ async function loadSceneTextures(gl) {
   window.plaqueTexture = loadTexturePOT(gl, TEXTURE_PATHS.plaque, TEXTURE_DEFAULTS.potSize);
   window.photoTexture = loadTexturePOT(gl, TEXTURE_PATHS.photo, TEXTURE_DEFAULTS.potSize);
 
+  // Texture di default
   window.meshTexture = window.wallTexture;
 
-
-  // Texture cappella
-  chapelParts.roofCurved.texture      = window.ceilingTexture;         
-  chapelParts.floor.texture           = window.floorTilesTexture;
-  chapelParts.walls.texture           = window.wallTexture;         
-  chapelParts.roof.texture            = window.wallTexture;         
-  chapelParts.door.texture            = window.doorTexture;           
-  chapelParts.window.texture          = window.windowTexture;
-  chapelParts.windowLeft.texture      = window.simpleWindowTexture;
-  chapelParts.windowRight.texture     = window.simpleWindowTexture;
-  chapelParts.circWindow.texture      = window.circularWindowTexture;
-
+  // Assegnazione alle parti della cappella
+  chapelParts.roofCurved.texture = window.ceilingTexture;
+  chapelParts.floor.texture = window.floorTilesTexture;
+  chapelParts.walls.texture = window.wallTexture;
+  chapelParts.roof.texture = window.wallTexture;
+  chapelParts.door.texture = window.doorTexture;
+  chapelParts.window.texture = window.windowTexture;
+  chapelParts.windowLeft.texture = window.simpleWindowTexture;
+  chapelParts.windowRight.texture = window.simpleWindowTexture;
+  chapelParts.circWindow.texture = window.circularWindowTexture;
 }

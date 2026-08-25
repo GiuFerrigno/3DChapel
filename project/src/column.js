@@ -1,40 +1,37 @@
 "use strict";
 
-let columnObjBufferInfo = null;
-let columnObjReady = false;
+let columnBufferInfo = null;
+let isColumnModelReady = false;
 
-let columnObjBounds = null;
-
-const COLUMN_OBJ_CONFIG = {
+const COLUMN_MODEL = {
   url: "../models/columna.obj",
-  scale: [3.0, 3.2, 3.0],
-  positionY: 0.0,
-  color: [1.0, 1.0, 1.0, 1.0],
+  scale: [1, 1, 1],
+  baseOffsetY: 0,
+  color: [1, 1, 1, 1],
 };
 
-function getColumnPosition(x, z) {
-  return [
-    x,
-    COLUMN_OBJ_CONFIG.positionY,
-    z,
-  ];
-}
-
-// Converte la mesh OBJ nei buffer utilizzabili da WebGL
-function createColumnArraysFromMesh(mesh) {
+/**
+ * Converte la mesh OBJ
+ * Se un vertice non ha normali o UV, applica valori di fallback
+ */
+function createColumnArrays(mesh) {
   const positions = [];
   const normals = [];
   const texcoords = [];
 
-  for (let i = 1; i <= mesh.nface; i++) {
-    const face = mesh.face[i];
+  for (let faceIndex = 1; faceIndex <= mesh.nface; ++faceIndex) {
+    const face = mesh.face[faceIndex];
 
-    if (!face || !face.vert || face.vert.length < 3) continue;
+    if (!face?.vert || face.vert.length < 3) {
+      continue;
+    }
 
-    for (let k = 0; k < 3; k++) {
-      const vertex = mesh.vert[face.vert[k]];
+    for (let vertexIndex = 0; vertexIndex < 3; ++vertexIndex) {
+      const vertex = mesh.vert[face.vert[vertexIndex]];
 
-      if (!vertex) continue;
+      if (!vertex) {
+        continue;
+      }
 
       positions.push(
         vertex.x,
@@ -42,27 +39,24 @@ function createColumnArraysFromMesh(mesh) {
         vertex.z
       );
 
-      const normalIndex = face.normalVertexIndex?.[k];
+      const normalVertexIndex = face.normalVertexIndex?.[vertexIndex];
 
-      const normal = normalIndex && mesh.normal?.[normalIndex] ? 
-                     mesh.normal[normalIndex] : mesh.facetnorms?.[face.normalFaceIndex];
+      const normal = mesh.normal?.[normalVertexIndex] ?? mesh.facetnorms?.[face.normalFaceIndex];
 
-      if (normal) {
-        normals.push(normal.i, normal.j, normal.k);
-      } else {
-        normals.push(0, 1, 0);
-      }
+      normals.push(
+        normal?.i ?? 0,
+        normal?.j ?? 1,
+        normal?.k ?? 0
+      );
 
-      const uvIndex = face.textCoordsIndex?.[k];
+      const texcoordIndex = face.textCoordsIndex?.[vertexIndex];
 
-      const uv = uvIndex && mesh.textCoords?.[uvIndex] ? 
-                 mesh.textCoords[uvIndex] : null ;
+      const texcoord = mesh.textCoords?.[texcoordIndex];
 
-      if (uv) {
-        texcoords.push(uv.u, uv.v);
-      } else {
-        texcoords.push(0.5, 0.5);
-      }
+      texcoords.push(
+        texcoord?.u ?? 0.5,
+        texcoord?.v ?? 0.5
+      );
     }
   }
 
@@ -82,10 +76,16 @@ function createColumnArraysFromMesh(mesh) {
   };
 }
 
-// Carica il file OBJ della colonna
+/**
+ * Carica, normalizza e ridimensiona il modello OBJ della colonna
+ * La base viene allineata al pavimento e l'altezza a COLUMN_DIMS.targetHeight
+ */
 async function initColumnOBJ(gl) {
-  const response = await fetch(COLUMN_OBJ_CONFIG.url);
-  if (!response.ok) { throw new Error(`Impossibile caricare ${COLUMN_OBJ_CONFIG.url}`); }
+  const response = await fetch(COLUMN_MODEL.url);
+
+  if (!response.ok) {
+    throw new Error(`Impossibile caricare ${COLUMN_MODEL.url}`);
+  }
 
   const objText = await response.text();
   const mesh = new subd_mesh();
@@ -96,60 +96,43 @@ async function initColumnOBJ(gl) {
     FacetNormals(mesh);
   }
 
-  // Centra e normalizza il modello
   Unitize(mesh);
 
-  // Calcola le dimensioni reali dopo Unitize
-  columnObjBounds = computeMeshBounds(mesh);
+  const bounds = computeMeshBounds(mesh);
 
-  if (!columnObjBounds || columnObjBounds.height <= 0) { 
-    throw new Error("Altezza OBJ non valida"); 
+  if (!bounds || bounds.height <= 0) {
+    throw new Error("Altezza OBJ della colonna non valida");
   }
 
-  // Altezza desiderata: uguale alla parete
-  const targetHeight = COLUMN_DIMS.targetHeight;
+  const uniformScale = COLUMN_DIMS.targetHeight / bounds.height;
 
-  // Scala uniforme per mantenere le proporzioni
-  const uniformScale = targetHeight / columnObjBounds.height;
+  COLUMN_MODEL.scale = [
+    uniformScale,
+    uniformScale,
+    uniformScale,
+  ];
 
-  COLUMN_OBJ_CONFIG.scale = [uniformScale, uniformScale, uniformScale];
+  // Dopo la scala, il punto più basso coincide con Y = 0
+  COLUMN_MODEL.baseOffsetY = -bounds.minY * uniformScale;
 
-  // Porta il punto più basso dell'OBJ a Y = 0
-  COLUMN_OBJ_CONFIG.positionY = -columnObjBounds.minY * uniformScale;
+  const arrays = createColumnArrays(mesh);
 
-  const arrays = createColumnArraysFromMesh(mesh);
+  columnBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
 
-  columnObjBufferInfo = webglUtils.createBufferInfoFromArrays(gl, arrays);
-
-  columnObjReady = true;
+  isColumnModelReady = true;
 }
 
-
-// Disegna le colonne nella scena
-function drawColumnsOBJ(view, projection, cameraPosition) {
-  if (!columnObjReady || !columnObjBufferInfo) return; 
-
-  for (const z of COLUMN_ROWS_Z) {
-    //Colonne sinistre
-    drawColumnOBJAt(getColumnPosition(COLUMN_DIMS.xLeft, z), Math.PI, view, projection, cameraPosition);
-
-    //Colonne destre
-    drawColumnOBJAt(getColumnPosition(COLUMN_DIMS.xRight, z), 0.0, view, projection, cameraPosition);
-  }
-}
-
-
-//OBJ 
-function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition) {
-  if (!columnObjReady || !columnObjBufferInfo) return;
-
+/**
+ * Costruisce la trasformazione di una singola colonna
+ */
+function getColumnWorldMatrix(x, z, rotationY) {
   let world = m4.identity();
 
   world = m4.translate(
     world,
-    position[0],
-    position[1],
-    position[2]
+    x,
+    COLUMN_MODEL.baseOffsetY,
+    z
   );
 
   world = m4.yRotate(
@@ -157,45 +140,71 @@ function drawColumnOBJAt(position, rotationY, view, projection, cameraPosition) 
     rotationY
   );
 
-  world = m4.scale(
+  return m4.scale(
     world,
-    COLUMN_OBJ_CONFIG.scale[0],
-    COLUMN_OBJ_CONFIG.scale[1],
-    COLUMN_OBJ_CONFIG.scale[2]
+    COLUMN_MODEL.scale[0],
+    COLUMN_MODEL.scale[1],
+    COLUMN_MODEL.scale[2]
   );
+}
 
-  const worldInverseTranspose = m4.transpose(m4.inverse(world));
-
-  const candleLight = state.candles.light;
+/**
+ * Render delle colonne
+ */
+function drawColumnsOBJ(view, projection, cameraPosition) {
+  if (!isColumnModelReady || !columnBufferInfo) return;
 
   gl.useProgram(programInfo.program);
 
-  webglUtils.setBuffersAndAttributes(gl, programInfo, columnObjBufferInfo);
+  const candleLight = state.candles.light;
+
+  const sharedUniforms = {
+    u_view: view,
+    u_projection: projection,
+    u_viewWorldPosition: cameraPosition,
+
+    u_pointLightPosition: candleLight.position,
+    u_pointLightColor: candleLight.color,
+    u_pointLightIntensity: candleLight.intensity,
+    u_pointLightRadius: candleLight.radius,
+
+    u_colorMult: COLUMN_MODEL.color,
+    u_ambient: state.ambient,
+
+    u_shadowEnabled: 0,
+    u_shadowFarPlane: SHADOW_FAR,
+  };
+
+  const materialTexture = window.columnTexture ?? window.whiteTexture;
+  bindLitTextures(materialTexture);
+
+  webglUtils.setBuffersAndAttributes(gl, programInfo, columnBufferInfo);
+
+
+  for (const z of COLUMN_ROWS_Z) {
+    // Le colonne sinistre sono ruotate di 180º 
+    drawColumnAt(COLUMN_DIMS.xLeft, z, Math.PI, sharedUniforms);
+
+    // Le colonne destre non necessitano di rotazione
+    drawColumnAt(COLUMN_DIMS.xRight, z, 0, sharedUniforms);
+  }
+}
+
+/**
+ * Disegna un'istanza del modello della colonna
+ */
+function drawColumnAt(x, z, rotationY, sharedUniforms) {
+  const world = getColumnWorldMatrix(x, z, rotationY);
 
   webglUtils.setUniforms(
     programInfo,
     {
+      ...sharedUniforms,
       u_world: world,
-      u_view: view,
-      u_projection: projection,
-      u_worldInverseTranspose: worldInverseTranspose,
-      u_viewWorldPosition: cameraPosition,
-
-      u_pointLightPosition: candleLight.position,
-      u_pointLightColor: candleLight.color,
-      u_pointLightIntensity: candleLight.intensity,
-      u_pointLightRadius: candleLight.radius,
-      u_colorMult: COLUMN_OBJ_CONFIG.color,
-      u_texture: window.columnTexture || window.whiteTexture,
-
-      u_ambient: state.ambient,
-      u_lightIntensity: 0.0,
+      u_worldInverseTranspose:
+        m4.transpose(m4.inverse(world)),
     }
   );
 
-  gl.disable(gl.CULL_FACE);
-
-  webglUtils.drawBufferInfo(gl, columnObjBufferInfo);
-
-  gl.enable(gl.CULL_FACE);
+  webglUtils.drawBufferInfo(gl, columnBufferInfo);
 }

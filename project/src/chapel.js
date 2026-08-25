@@ -1,136 +1,118 @@
 "use strict";
 
-const chapel = {
-  objPath: '../models/chapel.obj',
+const CHAPEL_MODEL = {
+  objPath: "../models/chapel.obj",
   position: [0, 0, 0],
-  scale:    [10, 10, 10],
+  scale: [10, 10, 10],
+  yOffset: 5.1,
+  yRotation: Math.PI,
 };
 
-const chapelParts = {
-  walls: {
-    objName: 'Walls',
-    bufferInfo: null,
-    texture: null,
-    color: [1, 1, 1, 1],    // muro
-  },
-  roof: {
-    objName: 'Roof',
-    bufferInfo: null,
-    texture: null,
-    color: [1, 1, 1, 1],    // tetto
-  },
-  floor: {
-    objName: 'Floor',
-    bufferInfo: null,
-    texture: null,
-    color: [1, 1, 1, 1],    // pavimento
-  },
-  door: {
-    objName: 'Door',
-    bufferInfo: null,
-    texture: null,
-    color: [1, 1, 1, 1],    // legno porta
-  },
-  window: {
-    objName: 'Window',
-    bufferInfo: null,
-    texture: null,
-    color: [1, 1, 1, 1],    // vetro finestra centrale
-  },
-  windowLeft: {
-    objName: 'WindowLeft',
-    bufferInfo: null,
-    texture: null,
-    color: [1, 1, 1, 1],    // vetro finestra sinistra
-  },
-  windowRight: {
-    objName: 'WindowRight',
-    bufferInfo: null,
-    texture: null,
-    color: [1, 1, 1, 1],    // vetro finestra destra
-  },
-  circWindow: {
-    objName: 'CircWindow',
-    bufferInfo: null,
-    texture: null,
-    color: [1, 1, 1, 1],    // vetro finestra circolare
-  },
-  roofCurved: {
-    objName: 'Cupola',
-    bufferInfo: null,
-    texture: null,
-    color: [1, 1, 1, 1],    // materiale tetto/cupola
-  },
+const DEFAULT_COLOR = [1, 1, 1, 1];
+
+/*
+ * Indici dei gruppi nell'OBJ, definiti dall'ordine delle righe `g`
+ * Se l'export di Blender cambia, bisogna aggiornare questa mappa
+ */
+const CHAPEL_GROUP_INDICES = {
+  roofCurved: 1,
+  floor: 2,
+  walls: 3,
+  door: 4,
+  circWindow: 5,
+  window: 6,
+  windowLeft: 7,
+  windowRight: 8,
+  roof: 9,
 };
 
-async function loadChapelMeshes(gl) {
-  const response = await fetch(chapel.objPath);
-  if (!response.ok) { throw new Error(`Impossibile caricare OBJ: chapel.obj`); }
-
-  const text = await response.text();
-
-  const mesh = new subd_mesh();
-  glmReadOBJ(text, mesh);
-  Unitize(mesh);
-
-  // Mappa dei group (in base alle righe g ... ):
-  // 1: RoofCurved_Mesh
-  // 2: Floor_Mesh
-  // 3: Roof_Mesh
-  // 4: Walls_Mesh
-  // 5: Door_Mesh
-  // 6: CircWindow_Mesh
-  // 7: Window_Mesh
-  // 8: WindowLeft_Mesh
-  // 9: WindowRIght_Mesh
-
-  chapelParts.roofCurved.bufferInfo  = createBufferForGroup(gl, mesh, 1);
-  chapelParts.floor.bufferInfo       = createBufferForGroup(gl, mesh, 2);
-  chapelParts.walls.bufferInfo       = createBufferForGroup(gl, mesh, 3);
-  chapelParts.door.bufferInfo        = createBufferForGroup(gl, mesh, 4);
-  chapelParts.circWindow.bufferInfo  = createBufferForGroup(gl, mesh, 5);
-  chapelParts.window.bufferInfo      = createBufferForGroup(gl, mesh, 6);
-  chapelParts.windowLeft.bufferInfo  = createBufferForGroup(gl, mesh, 7);
-  chapelParts.windowRight.bufferInfo = createBufferForGroup(gl, mesh, 8);
-  chapelParts.roof.bufferInfo        = createBufferForGroup(gl, mesh, 9);
+function createChapelMeshPart() {
+  return {
+    bufferInfo: null,
+    texture: null,
+    color: DEFAULT_COLOR,
+  };
 }
 
+/*
+ * Parti dell'OBJ, opache e trasparenti sono separate al draw time
+ */
+const chapelParts = {
+  walls: createChapelMeshPart(),
+  roof: createChapelMeshPart(),
+  floor: createChapelMeshPart(),
+  door: createChapelMeshPart(),
+
+  window: createChapelMeshPart(),
+  windowLeft: createChapelMeshPart(),
+  windowRight: createChapelMeshPart(),
+  circWindow: createChapelMeshPart(),
+
+  roofCurved: createChapelMeshPart(),
+};
+
+/**
+ * Carica l'OBJ della struttura e crea un buffer WebGL per ogni gruppo
+ */
+async function loadChapelMeshes(gl) {
+  const response = await fetch(CHAPEL_MODEL.objPath);
+
+  if (!response.ok) {
+    throw new Error(`Impossibile caricare OBJ: ${CHAPEL_MODEL.objPath}`);
+  }
+
+  const objText = await response.text();
+
+  const mesh = new subd_mesh();
+
+  glmReadOBJ(objText, mesh);
+  Unitize(mesh);
+
+  for (const [partName, groupIndex] of Object.entries(CHAPEL_GROUP_INDICES)) {
+    chapelParts[partName].bufferInfo = createBufferForGroup(gl, mesh, groupIndex);
+  }
+}
+
+/**
+ * Trasformazione comune all'intera mesh OBJ della cappella
+ */
 function getChapelWorld() {
-  const offsetY = 5.1;
   let world = m4.identity();
 
   world = m4.translate(
     world,
-    chapel.position[0],
-    chapel.position[1] + offsetY,
-    chapel.position[2]
+    CHAPEL_MODEL.position[0],
+    CHAPEL_MODEL.position[1] + CHAPEL_MODEL.yOffset,
+    CHAPEL_MODEL.position[2]
   );
 
-  const rotationY = Math.PI;   
-  world = m4.yRotate(world, rotationY);
-
-  world = m4.scale(
+  world = m4.yRotate(
     world,
-    chapel.scale[0],
-    chapel.scale[1],
-    chapel.scale[2]
+    CHAPEL_MODEL.yRotation
   );
 
-  return world;
+  return m4.scale(
+    world,
+    CHAPEL_MODEL.scale[0],
+    CHAPEL_MODEL.scale[1],
+    CHAPEL_MODEL.scale[2]
+  );
 }
 
-function createChapelDrawContext(view, projection, cameraPosition, shadowData = null) {
+/**
+ * Crea le uniform condivise dai gruppi della mesh principale
+ */
+function getChapelUniforms(view, projection, cameraPosition, shadowData
+) {
   const world = getChapelWorld();
-
-  const worldInverseTranspose = m4.transpose(m4.inverse(world));
-
   const candleLight = state.candles.light;
 
-  const commonUniforms = {
+  return {
     u_world: world,
     u_view: view,
     u_projection: projection,
-    u_worldInverseTranspose: worldInverseTranspose,
+    u_worldInverseTranspose:
+      m4.transpose(m4.inverse(world)),
 
     u_viewWorldPosition: cameraPosition,
 
@@ -140,73 +122,69 @@ function createChapelDrawContext(view, projection, cameraPosition, shadowData = 
     u_pointLightRadius: candleLight.radius,
 
     u_ambient: state.ambient,
-    u_lightIntensity: 0.0,
 
     u_shadowEnabled: shadowData ? 1 : 0,
     u_shadowFarPlane: SHADOW_FAR,
   };
-
-  function drawPart(part) {
-    if (!part || !part.bufferInfo || !part.texture) return;
-
-    webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
-
-    webglUtils.setUniforms(
-      programInfo,
-      {
-        ...commonUniforms,
-        u_colorMult: part.color,
-      }
-    );
-
-    // Unit 0 = texture standard 2D
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, part.texture);
-    gl.uniform1i(programInfo.uTextureLocation, 0);
-
-    // Unit 1 = depth cubemap
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, shadowTexture);
-    gl.uniform1i(programInfo.uShadowCubeLocation, 1);
-
-    webglUtils.drawBufferInfo(gl, part.bufferInfo);
-  }
-
-  return {
-    drawPart,
-    parts: chapelParts,
-  };
 }
 
+/**
+ * Disegna una parte della mesh della cappella usando il programma lit
+ */
+function drawChapelPart(part, commonUniforms) {
+  if (!part?.bufferInfo || !part.texture) return;
 
+  webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
+
+  webglUtils.setUniforms(
+    programInfo,
+    {
+      ...commonUniforms,
+      u_colorMult: part.color,
+    }
+  );
+
+  bindLitTextures(part.texture);
+  webglUtils.drawBufferInfo(gl, part.bufferInfo);
+}
+
+/**
+ * Renderizza struttura opaca: pavimento, muri, coperture e porta.
+ */
 function drawChapelOpaque(view, projection, cameraPosition, shadowData = null) {
   gl.useProgram(programInfo.program);
 
-  const chapel = createChapelDrawContext(view, projection, cameraPosition, shadowData);
+  const commonUniforms = getChapelUniforms(view, projection, cameraPosition, shadowData);
 
-  chapel.drawPart(chapel.parts.floor);
-  chapel.drawPart(chapel.parts.walls);
-  chapel.drawPart(chapel.parts.roof);
-  chapel.drawPart(chapel.parts.roofCurved);
-  chapel.drawPart(chapel.parts.door);
+  const opaqueParts = [
+    chapelParts.floor,
+    chapelParts.walls,
+    chapelParts.roof,
+    chapelParts.roofCurved,
+    chapelParts.door,
+  ];
+
+  for (const part of opaqueParts) {
+    drawChapelPart(part, commonUniforms);
+  }
 }
 
-
+/**
+ * Renderizza le vetrate nel pass trasparente
+ */
 function drawChapelTransparent(view, projection, cameraPosition) {
   gl.useProgram(programInfo.program);
 
-  const chapel = createChapelDrawContext(view, projection, cameraPosition);
+  const commonUniforms = getChapelUniforms(view, projection, cameraPosition, null);
 
-  const wasCullingEnabled = gl.isEnabled(gl.CULL_FACE);
+  const transparentParts = [
+    chapelParts.window,
+    chapelParts.windowLeft,
+    chapelParts.windowRight,
+    chapelParts.circWindow,
+  ];
 
-  gl.disable(gl.CULL_FACE);
-
-  chapel.drawPart(chapel.parts.window);
-  chapel.drawPart(chapel.parts.windowLeft);
-  chapel.drawPart(chapel.parts.windowRight);
-  chapel.drawPart(chapel.parts.circWindow);
-
-  if (wasCullingEnabled) {
-    gl.enable(gl.CULL_FACE);
+  for (const part of transparentParts) {
+    drawChapelPart(part, commonUniforms);
   }
 }

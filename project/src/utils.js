@@ -1,16 +1,30 @@
 "use strict";
 
-// Limita un valore tra un minimo e un massimo
+/* =============================================================================
+   Utility matematiche e di base
+   ============================================================================= */
+
+/**
+ * Limita un valore tra un minimo e un massimo
+ */
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
-// Controlla se un numero è una potenza di 2
+/**
+ * Controlla se un numero è una potenza di 2
+ */
 function isPowerOf2(value) {
   return (value & (value - 1)) === 0;
 }
 
-// Crea una texture 1x1 a tinta unita da usare come placeholder o colore base
+/* =============================================================================
+   Texture: creazione e caricamento
+   ============================================================================= */
+
+/**
+ * Crea una texture 1x1 a tinta unita
+ */
 function createSolidTexture(gl, rgba) {
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -35,8 +49,11 @@ function createSolidTexture(gl, rgba) {
   return tex;
 }
 
-
-// Carica una texture da file e applica i parametri corretti in base alla dimensione
+/**
+ * Carica una texture da file e applica i parametri corretti in base alla dimensione
+ * Se la texture è potenza di 2, genera i mipmap e usa filtraggio trilineare
+ * altrimenti usa CLAMP_TO_EDGE e filtraggio lineare semplice
+ */
 function loadTexture(gl, url) {
   return new Promise((resolve, reject) => {
     const tex = createSolidTexture(gl, [200, 200, 200, 255]);
@@ -73,10 +90,20 @@ function loadTexture(gl, url) {
   });
 }
 
+/* =============================================================================
+   Camera: posizione, target, reset
+   ============================================================================= */
+
+/**
+ * Restituisce la posizione corrente della camera
+ */
 function getCameraPosition() {
   return [...state.cameraPosition];
 }
 
+/**
+ * Calcola il punto verso cui guarda la camera, a partire da yaw e pitch
+ */
 function getCameraTarget() {
   const yaw = state.cameraYaw;
   const pitch = state.cameraPitch;
@@ -94,6 +121,9 @@ function getCameraTarget() {
   ];
 }
 
+/**
+ * Resetta la camera ai valori di default e la mantiene dentro la cappella
+ */
 function resetCamera() {
   state.cameraPosition[0] = CAMERA_DEFAULTS.position[0];
   state.cameraPosition[1] = CAMERA_DEFAULTS.position[1];
@@ -105,15 +135,24 @@ function resetCamera() {
   keepCameraInsideChapel();
 }
 
+/**
+ * Resetta i parametri della luce (ambiente, intensità di base, raggio)
+ */
 function resetLight() {
   state.ambient = LIGHT_DEFAULTS.ambient;
   state.candles.light.baseIntensity = LIGHT_DEFAULTS.baseIntensity;
   state.candles.light.radius = LIGHT_DEFAULTS.radius;
 }
 
-// Crea cubo
+/* =============================================================================
+   Geometria: cubo unitario e cilindro
+   ============================================================================= */
+
+/**
+ * Crea gli array per un cubo unitario centrato in (0,0,0), con lati da -0.5 a +0.5 su ogni asse.
+ * Include posizioni, normali, UV e indici.
+ */
 function createUnitCubeArrays() {
-  // Cubo unitario centrato in (0,0,0), lati da -0.5 a +0.5
   const positions = [
     // front face
     -0.5, -0.5,  0.5,
@@ -199,7 +238,10 @@ function createUnitCubeArrays() {
   };
 }
 
-// Buffer Info per cilindro 
+/**
+ * Crea un BufferInfo per un cilindro centrato in (0,0,0), con asse lungo Y, raggio e altezza specificati.
+ * Genera laterale + tappi superiore e inferiore.
+ */
 function createCylinderBufferInfo(gl, radius = 0.5, height = 1.0, segments = 20) {
   const positions = [];
   const normals = [];
@@ -209,22 +251,24 @@ function createCylinderBufferInfo(gl, radius = 0.5, height = 1.0, segments = 20)
   const halfHeight = height * 0.5;
 
   for (let i = 0; i < segments; ++i) {
-
-    const angle = i / segments * Math.PI * 2;
+    const angle = (i / segments) * Math.PI * 2;
     const x = Math.cos(angle);
     const z = Math.sin(angle);
 
     const u = i / segments;
 
+    // Vertice inferiore
     positions.push(radius * x, -halfHeight, radius * z);
     normals.push(x, 0, z);
     texcoords.push(u, 0);
 
+    // Vertice superiore
     positions.push(radius * x, halfHeight, radius * z);
     normals.push(x, 0, z);
     texcoords.push(u, 1);
   }
 
+  // Laterale
   for (let i = 0; i < segments; ++i) {
     const next = (i + 1) % segments;
 
@@ -238,14 +282,14 @@ function createCylinderBufferInfo(gl, radius = 0.5, height = 1.0, segments = 20)
     indices.push(nextBottom, nextTop, top);
   }
 
+  // Tappo inferiore
   const bottomCenter = positions.length / 3;
-
   positions.push(0, -halfHeight, 0);
   normals.push(0, -1, 0);
   texcoords.push(0.5, 0.5);
 
+  // Tappo superiore
   const topCenter = bottomCenter + 1;
-
   positions.push(0, halfHeight, 0);
   normals.push(0, 1, 0);
   texcoords.push(0.5, 0.5);
@@ -263,40 +307,30 @@ function createCylinderBufferInfo(gl, radius = 0.5, height = 1.0, segments = 20)
     indices.push(topCenter, top, nextTop);
   }
 
-  return webglUtils.createBufferInfoFromArrays(
-    gl,
-    {
-      position: {
-        numComponents: 3,
-        data: new Float32Array(
-          positions
-        ),
-      },
-
-      normal: {
-        numComponents: 3,
-        data: new Float32Array(
-          normals
-        ),
-      },
-
-      texcoord: {
-        numComponents: 2,
-        data: new Float32Array(
-          texcoords
-        ),
-      },
-
-      indices: new Uint16Array(
-        indices
-      ),
-    }
-  );
+  return webglUtils.createBufferInfoFromArrays(gl, {
+    position: {
+      numComponents: 3,
+      data: new Float32Array(positions),
+    },
+    normal: {
+      numComponents: 3,
+      data: new Float32Array(normals),
+    },
+    texcoord: {
+      numComponents: 2,
+      data: new Float32Array(texcoords),
+    },
+    indices: new Uint16Array(indices),
+  });
 }
 
+/* =============================================================================
+   Mesh OBJ: bounds e creazione buffer per gruppo
+   ============================================================================= */
 
-// Calcola i limiti della geometria di una mesh OBJ.
-// Funziona per qualsiasi altra mesh che utilizzi mesh.vert e mesh.nvert.
+/**
+ * Calcola i limiti (bounding box) della geometria di una mesh OBJ
+ */
 function computeMeshBounds(mesh) {
   let minX = Infinity;
   let minY = Infinity;
@@ -330,7 +364,13 @@ function computeMeshBounds(mesh) {
   };
 }
 
-// Per il caricamento di diverse parti di un obj 
+/**
+ * Crea un BufferInfo per un singolo gruppo di una mesh OBJ
+ * Estrae posizioni, normali e UV solo per le facce appartenenti al gruppo indicato
+ *
+ * Se le normali per vertice non sono disponibili, usa le normali per faccia
+ * Se le UV non sono disponibili, usa (0, 0) di default
+ */
 function createBufferForGroup(gl, mesh, groupIndex) {
   const positions = [];
   const normals = [];
@@ -340,7 +380,6 @@ function createBufferForGroup(gl, mesh, groupIndex) {
     const face = mesh.face[i];
 
     if (!face || face.group !== groupIndex) continue;
-
     if (!face.vert || face.vert.length < 3) continue;
 
     for (let k = 0; k < 3; k++) {
@@ -349,11 +388,7 @@ function createBufferForGroup(gl, mesh, groupIndex) {
 
       if (!vertex) continue;
 
-      positions.push(
-        vertex.x,
-        vertex.y,
-        vertex.z
-      );
+      positions.push(vertex.x, vertex.y, vertex.z);
 
       let nx = 0;
       let ny = 0;
@@ -362,24 +397,18 @@ function createBufferForGroup(gl, mesh, groupIndex) {
       const normalIndex = face.normalVertexIndex && face.normalVertexIndex[k];
 
       if (normalIndex && mesh.normal && mesh.normal[normalIndex]) {
-
         const normal = mesh.normal[normalIndex];
         nx = normal.i;
         ny = normal.j;
         nz = normal.k;
       } else if (mesh.facetnorms && mesh.facetnorms[face.normalFaceIndex]) {
-
         const normal = mesh.facetnorms[face.normalFaceIndex];
         nx = normal.i;
         ny = normal.j;
         nz = normal.k;
       }
 
-      normals.push(
-        nx,
-        ny,
-        nz
-      );
+      normals.push(nx, ny, nz);
 
       const textureIndex = face.textCoordsIndex && face.textCoordsIndex[k];
 
@@ -394,38 +423,48 @@ function createBufferForGroup(gl, mesh, groupIndex) {
 
   const positionData = new Float32Array(positions);
 
-  const bufferInfo = webglUtils.createBufferInfoFromArrays(
-      gl,
-      {
-        position: {
-          numComponents: 3,
-          data: positionData,
-        },
-
-        normal: {
-          numComponents: 3,
-          data: new Float32Array(normals),
-        },
-
-        texcoord: {
-          numComponents: 2,
-          data: new Float32Array(texcoords),
-        },
-      }
-    );
+  const bufferInfo = webglUtils.createBufferInfoFromArrays(gl, {
+    position: {
+      numComponents: 3,
+      data: positionData,
+    },
+    normal: {
+      numComponents: 3,
+      data: new Float32Array(normals),
+    },
+    texcoord: {
+      numComponents: 2,
+      data: new Float32Array(texcoords),
+    },
+  });
 
   bufferInfo.positions = positionData;
 
   return bufferInfo;
 }
 
+/* =============================================================================
+   Rendering: pass opaque / trasparente e binding texture
+   ============================================================================= */
 
+/**
+ * Configura lo stato WebGL per il pass opaque:
+ * - blending disattivato
+ * - depth test attivo
+ * - scrittura depth abilitata
+ */
 function beginOpaquePass(gl) {
   gl.disable(gl.BLEND);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
 }
 
+/**
+ * Configura lo stato WebGL per il pass trasparente:
+ * - blending attivo (alpha standard)
+ * - depth test attivo
+ * - scrittura depth disabilitata
+ */
 function beginTransparentPass(gl) {
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -433,7 +472,29 @@ function beginTransparentPass(gl) {
   gl.depthMask(false);
 }
 
+/**
+ * Ripristina lo stato WebGL dopo il pass trasparente:
+ * - scrittura depth riabilitata
+ * - blending disattivato
+ */
 function endTransparentPass(gl) {
   gl.depthMask(true);
   gl.disable(gl.BLEND);
+}
+
+/**
+ * Associa le texture richieste dal programma di illuminazione:
+ * - TEXTURE0: texture 2D del materiale
+ * - TEXTURE1: depth cubemap per le ombre della point light
+ *
+ * I sampler2D e samplerCube devono usare texture unit differenti
+ */
+function bindLitTextures(materialTexture) {
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, materialTexture);
+  gl.uniform1i(programInfo.uTextureLocation, 0);
+
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, shadowTexture);
+  gl.uniform1i(programInfo.uShadowCubeLocation, 1);
 }

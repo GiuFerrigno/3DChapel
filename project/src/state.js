@@ -4,43 +4,35 @@ let gl = null;
 let programInfo = null;
 let candleProgramInfo = null;
 
-// Camera defaults
 const CAMERA_DEFAULTS = {
-  yaw: 0.0,            
-  pitch: 0.1,            
-  position: [0, 1.6, 9], 
+  yaw: 0.0,
+  pitch: 0.1,
+  position: [0, 1.6, 9],
 };
 
-// Light defaults
 const LIGHT_DEFAULTS = {
   ambient: 0.03,
   baseIntensity: 3.8,
-  radius: 7.0, 
+  radius: 7.0,
 };
 
-// Window effect defaults
-const WINDOW_EFFECT_DEFAULTS = {
-  visible: true,
-};
-
-// Global scene state
+/**
+ * Stato globale della scena
+ */
 const state = {
   // Camera
   cameraYaw: CAMERA_DEFAULTS.yaw,
   cameraPitch: CAMERA_DEFAULTS.pitch,
   cameraPosition: [...CAMERA_DEFAULTS.position],
 
-  // Scene / animation
+  // Scena
   meshYaw: 0,
   useTexture: true,
 
-  // Light
+  // Luce
   ambient: LIGHT_DEFAULTS.ambient,
 
-  // Window effect
-  // Non usato al momento 
-  showWindowEffect: WINDOW_EFFECT_DEFAULTS.visible,
-
+  // Candele
   candles: {
     enabled: true,
     positions: [
@@ -53,16 +45,16 @@ const state = {
     flameScale: [0.10, 0.22, 0.10],
 
     wickHeight: 0.075,
-    wickRadius: 0.01, 
+    wickRadius: 0.01,
 
     animate: true,
-    time: 0.0, 
-    speed: 1.0, 
+    time: 0.0,
+    speed: 1.0,
 
     light: {
       position: [0.0, 1.85, -5.4],
       color: [1.0, 0.48, 0.12],
-      baseIntensity: LIGHT_DEFAULTS.baseIntensity, 
+      baseIntensity: LIGHT_DEFAULTS.baseIntensity,
       intensity: 2.6,
       radius: LIGHT_DEFAULTS.radius,
     },
@@ -74,27 +66,25 @@ const state = {
       color: [0.15, 0.13, 0.10, 1.0],
       size: 0.10,
     },
-
   },
 
+  // Polvere atmosferica
   dust: {
     enabled: true,
     count: 70,
   },
 
+  // Rendering avanzato
   advancedRendering: {
     shadowMapping: true,
   },
 };
 
-// Input state
 let keys = {
   KeyW: false,
   KeyA: false,
   KeyS: false,
   KeyD: false,
-  KeyQ: false,
-  KeyE: false,
   ArrowUp: false,
   ArrowLeft: false,
   ArrowDown: false,
@@ -103,7 +93,10 @@ let keys = {
   ShiftRight: false,
 };
 
-// Furniture constants? 
+// -----------------------------------------------------------------------------
+// Dimensioni arredo (usate per generare panche, altare, ecc.)
+// -----------------------------------------------------------------------------
+
 const ALTAR_DIMS = {
   platformY: 0.15,
   platformZ: -5.4,
@@ -164,11 +157,10 @@ const COLORS = {
   columnBase: [0.68, 0.68, 0.70, 1],
 };
 
-// Colonne
 const COLUMN_DIMS = {
   xLeft: -4.45,
   xRight: 4.45,
-  targetHeight: 6.55, 
+  targetHeight: 6.55,
 };
 
-const COLUMN_ROWS_Z = [7, 2.4, -2.4, -7]; 
+const COLUMN_ROWS_Z = [7, 2.4, -2.4, -7];

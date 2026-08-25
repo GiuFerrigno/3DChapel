@@ -2,7 +2,7 @@
 
 const PLAQUE_OBJ_CONFIG = {
   objPath: "../models/targa.obj",
-  position: [-3.25, -4, 9.6],
+  position: [-3.25, 0, 9.6],
   rotationY: Math.PI / 2,
   scale: [1.0, 1.0, 1.0],
   offsetY: 1.5,
@@ -25,24 +25,22 @@ const plaqueParts = {
 
 let plaqueBounds = null;
 
-
 async function loadPlaqueMeshes(gl) {
   const response = await fetch(PLAQUE_OBJ_CONFIG.objPath);
-
   const text = await response.text();
-  const mesh = new subd_mesh();
 
+  const mesh = new subd_mesh();
   glmReadOBJ(text, mesh);
   Unitize(mesh);
 
-  // Calcola i bounds dopo Unitize(), come per le colonne.
+  // Calcola i bounds dopo Unitize(), come per le colonne
   plaqueBounds = computeMeshBounds(mesh);
 
   if (!plaqueBounds || plaqueBounds.width <= 0 || plaqueBounds.height <= 0 || plaqueBounds.depth <= 0) {
     throw new Error("Dimensioni OBJ della targa non valide");
   }
 
-  // Porta la base della targa a Y = 0 prima di applicare offsetY.
+  // Porta la base della targa a Y = 0 prima di applicare offsetY
   PLAQUE_OBJ_CONFIG.position[1] = -plaqueBounds.minY * PLAQUE_OBJ_CONFIG.scale[1] + PLAQUE_OBJ_CONFIG.offsetY;
 
   // Gruppi dell'OBJ:
@@ -51,8 +49,8 @@ async function loadPlaqueMeshes(gl) {
   plaqueParts.plaque.bufferInfo = createBufferForGroup(gl, mesh, 1);
   plaqueParts.image.bufferInfo = createBufferForGroup(gl, mesh, 2);
 
-  plaqueParts.plaque.texture = window.plaqueTexture 
-  plaqueParts.image.texture = window.photoTexture
+  plaqueParts.plaque.texture = window.plaqueTexture;
+  plaqueParts.image.texture = window.photoTexture;
 }
 
 function getPlaqueWorld() {
@@ -77,13 +75,10 @@ function getPlaqueWorld() {
   return world;
 }
 
-function drawPlaqueOBJ(view, projection, cameraPosition) {
+function drawPlaqueOBJ(view, projection) {
   const world = getPlaqueWorld();
 
-  const worldInverseTranspose =
-    m4.transpose(
-      m4.inverse(world)
-    );
+  const worldInverseTranspose = m4.transpose(m4.inverse(world));
 
   gl.useProgram(programInfo.program);
 
@@ -105,14 +100,11 @@ function drawPlaqueOBJ(view, projection, cameraPosition) {
 
     webglUtils.setBuffersAndAttributes(gl, programInfo, part.bufferInfo);
 
-    webglUtils.setUniforms(
-      programInfo,
-      {
-        ...commonUniforms,
-        u_colorMult: part.color,
-        u_texture: part.texture,
-      }
-    );
+    webglUtils.setUniforms(programInfo, {
+      ...commonUniforms,
+      u_colorMult: part.color,
+      u_texture: part.texture,
+    });
 
     webglUtils.drawBufferInfo(gl, part.bufferInfo);
   }

@@ -2,7 +2,7 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0 viewport-fit=cover"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <title>Virtual Chapel</title>
     <link rel="icon" type="image/png" href="../textures/icon.png">
     <link rel="stylesheet" href="./style.css" />
@@ -11,20 +11,22 @@
     <div id="app">
       <canvas id="canvas"></canvas>
 
+      <!-- Istruzioni desktop -->
       <div id="hudDesktop" class="hud">
         <h1>Virtual Chapel</h1>
         <p>Trascina il mouse: guarda attorno</p>
-        <p>Rotella: zoom avanti / indietro</p>
         <p>W A S D: movimento</p>
-        <p>Shift: aumenta velocità</p>
+        <p>Shift: aumenta velocità di movimento</p>
       </div>
 
+      <!-- Istruzioni dispositivi touch -->
       <div id="hudMobile" class="hud">
         <h1>Virtual Chapel</h1>
         <p>Touch sinistro: movimento</p>
         <p>Touch destro: guarda attorno</p>
       </div>
 
+      <!-- Joystick per movimento touch -->
       <div id="moveJoystick" class="joystick hidden">
         <div id="moveJoystickKnob" class="joystick-knob"></div>
       </div>
@@ -37,7 +39,7 @@
     <script src="../lib/glm_utils.js"></script>
     <script src="../lib/dat.gui.js"></script>
 
-    <!-- Progetto -->
+    <!-- Moduli progetto -->
     <script src="./state.js"></script>
     <script src="./utils.js"></script>
     <script src="./input.js"></script>
