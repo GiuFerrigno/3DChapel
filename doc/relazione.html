@@ -144,16 +144,19 @@
       <p class="subtitle">Relazione del progetto d'esame di Computer Graphics – A.A. 2025-2026</p>
 
       <div class="author">
-        <p><strong>NOME COGNOME</strong></p>
-        <p><strong>NUMERO DI MATRICOLA</strong></p>
-        <p><strong>MAIL ISTITUZIONALE</strong></p>
+        <p><strong>Giulia Ferrigno</strong></p>
+        <p><strong>0001179473</strong></p>
+        <p><strong>giulia.ferrigno2@studio.unibo.it</strong></p>
       </div>
     </header>
 
     <section>
       <h2>Descrizione dell'applicazione</h2>
       <p>
-        Virtual Chapel è una WebApp 3D interattiva che permette di esplorare l'interno di una cappella virtuale direttamente nel browser. La scena riproduce uno spazio raccolto, caratterizzato da pavimento, pareti, soffitto, porta, vetrate, colonne, altare, targa commemorativa e tre candele accese. L'applicazione è sviluppata con HTML, CSS, JavaScript, WebGL 2 e shader GLSL, senza l'uso di motori grafici di alto livello.
+        Virtual Chapel è una WebApp 3D interattiva che permette di esplorare l'interno di una cappella 
+        virtuale direttamente nel browser. La scena riproduce uno spazio raccolto, caratterizzato da pavimento, 
+        pareti, soffitto, porta, vetrate, colonne, altare, targa commemorativa e tre candele accese. L'applicazione è 
+        sviluppata con HTML, CSS, JavaScript, WebGL 2 e shader GLSL.
       </p>
     </section>
 
@@ -165,51 +168,96 @@
         Il codice è stato diviso in moduli JavaScript con responsabilità separate:
       </p>
       <ul>
-        <li><code>state.js</code>: stato condiviso della scena, valori di default, camera, input, candele, polvere e opzioni di rendering.</li>
-        <li><code>main.js</code>: inizializzazione WebGL 2, compilazione shader, ciclo di rendering e coordinamento dei pass.</li>
+        <li><code>state.js</code>: stato condiviso della scena, valori di default, camera, input, candele, polvere e 
+          opzioni di rendering.</li>
+        <li><code>main.js</code>: inizializzazione WebGL 2, compilazione shader, ciclo di rendering e coordinamento 
+          dei pass.</li>
         <li><code>input.js</code>: gestione di mouse, tastiera, touch e joystick virtuale.</li>
         <li><code>loader.js</code>: caricamento e preparazione delle texture.</li>
         <li><code>light.js</code>: candele, fiamme, stoppini, fumo e relativa animazione.</li>
         <li><code>render.js</code>: inizializzazione della geometria della scena.</li>
         <li><code>utils.js</code>: utility matematiche, geometrie procedurali, buffer OBJ e gestione dei pass WebGL.</li>
-        <li>Altri file per il caricamento dei vari oggetti: <code>chapel.js</code> (cappella), <code>chapel_furniture.js</code> (arredamenti procedurali della cappella), <code>plaque.js</code> (targa), <code>column.js</code> (colonne), <code>dust.js</code> (polvere atmosferica).</li>
+        <li>Altri file per il caricamento dei vari oggetti: <code>chapel.js</code> (cappella), 
+          <code>chapel_furniture.js</code> (arredamenti procedurali della cappella), <code>plaque.js</code> (targa), 
+          <code>column.js</code> (colonne), <code>dust.js</code> (polvere atmosferica).</li>
       </ul>
     </section>
 
     <section>
-      <h2>Realizzazione della scena</h2>
+      <h2>Struttura della scena</h2>
 
       <h3>Modelli e geometria</h3>
       <p>
-        L'oggetto principale è una mesh poligonale caricata da file OBJ Wavefront: la cappella, le colonne e la targa sono modelli esterni, di cui la cappella e la targa realizzate su Blender e la colonna adattata da un modello gratuito per ottenere una mezza colonna. Il modello della cappella è suddiviso in parti alle quali vengono associate texture differenti, come pavimento, pareti, copertura, porta e vetrate. Alcuni elementi sono generati proceduralmente. Il corpo delle candele e lo stoppino sono ottenuti da cilindri; la fiamma è una mesh costruita tramite anelli di vertici di ampiezza decrescente; il fumo è composto da piccole mesh semitrasparenti.
+        L'oggetto principale è costituito dalla cappella, creata interamente su Blender e caricata come mesh 
+        poligonale da file OBJ Wavefront. 
+        Il modello della cappella è suddiviso in diverse parti, alle quali vengono associate texture differenti
+        a seconda del loro ruolo, materiale e posizione.  
+        La cappella è arredata da altri oggetti tridimensionali: 
+        <ul>
+          <li><b>targa</b>: anch'essa modellata ex novo su Blender e caricata tramile file <code>.obj</code>.</li>
+          <li><b>colonne</b>: derivate da un modello gratuito reperito online, poi modificato su Blender in modo da 
+            ottenere una mezza colonna.
+          </li>
+          <li><b>oggetti procedurali</b>: quali panche, altare e candele.</li>
+        </ul>
+        In particolare, il corpo delle candele e lo stoppino sono ottenuti a partire da cilindri,  
+        la fiamma è, invece, una mesh costruita tramite anelli di vertici di ampiezza decrescente 
+        e il fumo è composto da piccole mesh semitrasparenti animate per simulare un effetto realistico.
       </p>
 
       <h3>Camera e navigazione</h3>
       <p>
-        La camera è in prima persona e usa i parametri di orientamento yaw e pitch. La funzione di aggiornamento calcola la direzione osservata a partire da tali angoli e costruisce la matrice di vista con <code>lookAt</code>. Il pitch è limitato per evitare rotazioni complete verso l'alto o il basso e la posizione è vincolata ai limiti interni della cappella, impedendo l'uscita dalla scena.
+        La camera è in prima persona e usa i parametri di orientamento yaw e pitch. 
+        La funzione di aggiornamento calcola la direzione osservata a partire da tali angoli e 
+        costruisce la matrice di vista con <code>lookAt</code>. 
+        Il pitch è limitato per evitare rotazioni complete verso l'alto o il basso e la posizione è vincolata 
+        ai limiti interni della cappella, impedendo l'uscita dalla scena.
       </p>
       <ul>
         <li>Su desktop, il mouse ruota la camera tramite trascinamento.</li>
         <li>WASD e frecce direzionali controllano il movimento orizzontale.</li>
         <li>Shift aumenta temporaneamente la velocità di spostamento.</li>
-        <li>Su dispositivi touch, un dito nella metà sinistra attiva il joystick virtuale e un dito nella metà destra controlla la visuale.</li>
+        <li>Su dispositivi touch, un dito nella metà sinistra attiva il joystick virtuale e un dito 
+          nella metà destra controlla la visuale.</li>
       </ul>
 
       <h3>Texture mapping</h3>
       <p>
-        Ogni oggetto significativo della scena è texturato: molte texture sono reperite online (legno, pavimento, porta, marmo, ecc.), le vetrate sono state disegnate ex novo, la texture della targa è stata modificata a partire da un marmo per aggiungere le scritte nere e, sul gruppo <code>Immagine</code> del modello della targa, è stata applicata una foto personale dell'autrice. Le texture sono caricate in memoria GPU e assegnate alle relative parti della scena. Prima del caricamento definitivo viene usata una texture placeholder di dimensione 1x1, evitando texture non inizializzate durante l'avvio. Le immagini vengono preparate a dimensione power-of-two per consentire mipmap, ripetizione e filtraggio lineare mipmapped.
+        Ogni oggetto significativo della scena è texturato: molte texture sono reperite online (legno, pavimento, porta, 
+        marmo, ecc.), le vetrate sono state disegnate ex novo, la texture della targa è stata modificata a partire 
+        dal marmo per aggiungere le scritte nere e, sul gruppo <code>Immagine</code> del modello della targa, 
+        è stata applicata una foto personale dell'autrice. 
+        Le texture sono caricate in memoria GPU e assegnate alle relative parti della scena. 
+        Prima del caricamento definitivo viene usata una texture placeholder di dimensione 1x1, 
+        evitando texture non inizializzate durante l'avvio. 
+        Le immagini vengono preparate a dimensione power-of-two per consentire mipmap, 
+        ripetizione e filtraggio lineare mipmapped.
       </p>
     </section>
 
     <section>
       <h2>Illuminazione e shader GLSL</h2>
       <p>
-        Il programma principale usa un vertex shader che trasforma ogni vertice con le matrici <code>u_world</code>, <code>u_view</code> e <code>u_projection</code>. Lo shader trasferisce al fragment shader la posizione nel mondo, la normale trasformata e le coordinate UV della texture. Nel fragment shader, il colore base è ottenuto campionando la texture e moltiplicandola per il colore del materiale. L'illuminazione diretta viene calcolata usando il modello diffuso di Lambert, attraverso il prodotto scalare tra normale e direzione della luce. La sorgente principale è una point light calda associata alle candele, con luce ambiente regolabile e attenuazione in funzione della distanza.
+        Il programma principale usa un vertex shader che trasforma ogni vertice con le matrici <code>u_world</code>, 
+        <code>u_view</code> e <code>u_projection</code>. 
+        Lo shader trasferisce al fragment shader la posizione nel mondo, la normale trasformata e le coordinate UV 
+        della texture. Nel fragment shader, il colore base è ottenuto campionando la texture e moltiplicandola 
+        per il colore del materiale. L'illuminazione diretta viene calcolata usando il modello diffuso di Lambert, 
+        attraverso il prodotto scalare tra normale e direzione della luce. 
+        La sorgente principale è una point light calda associata alle candele, con luce ambiente regolabile e 
+        attenuazione in funzione della distanza.
       </p>
 
       <h3>Animazione delle candele</h3>
       <p>
-        Le candele costituiscono l'elemento animato principale. A ogni frame, la scala verticale della fiamma, la sua inclinazione laterale e l'intensità della point light vengono modificate con funzioni sinusoidali a frequenze differenti. La combinazione delle onde produce un flickering non perfettamente regolare, più naturale rispetto a un'animazione lineare. Gli stoppini rimangono opachi, mentre fiamme e fumo sono disegnati nel pass trasparente. Il fumo sale progressivamente, oscilla sui due assi orizzontali, aumenta leggermente di dimensione e riduce la propria opacità durante il ciclo di vita della particella. Anche la polvere atmosferica è dinamica e contribuisce al senso di profondità della scena.
+        Le candele costituiscono l'elemento animato principale. A ogni frame, la scala verticale della fiamma, 
+        la sua inclinazione laterale e l'intensità della point light vengono modificate con funzioni sinusoidali a 
+        frequenze differenti. La combinazione delle onde produce un flickering non perfettamente regolare, 
+        più naturale rispetto a un'animazione lineare. Gli stoppini rimangono opachi, mentre fiamme e fumo sono 
+        disegnati nel pass trasparente. Il fumo sale progressivamente, oscilla sui due assi orizzontali, aumenta 
+        leggermente di dimensione e riduce la propria opacità durante il ciclo di vita della particella. 
+        Anche la polvere atmosferica è dinamica e contribuisce al senso di profondità della scena. La posizione e la dimensione 
+        delle particelle sono generate casualmente, in modo che ad ogni esecuzione la scena risulti sempre diversa.
       </p>
     </section>
 
@@ -218,15 +266,23 @@
 
       <h3>Shadow mapping per point light</h3>
       <p>
-        La tecnica avanzata scelta è lo <strong>shadow mapping con cubemap</strong>, attivabile e disattivabile dal pannello dat.GUI. Una point light emette luce in tutte le direzioni, perciò viene utilizzata una depth cubemap composta da sei facce, una per ogni direzione principale dello spazio.
+        La tecnica avanzata scelta è lo <strong>shadow mapping con cubemap</strong>, attivabile e disattivabile 
+        dal pannello <code>dat.GUI</code>. Una point light emette luce in tutte le direzioni, perciò viene utilizzata 
+        una depth cubemap composta da sei facce, una per ogni direzione principale dello spazio.
       </p>
       <ul>
-        <li><strong>Pass di shadow map:</strong> la geometria opaca viene renderizzata dalla posizione della luce per le sei direzioni della cubemap. Per ogni frammento viene memorizzata la distanza lineare dalla luce, normalizzata rispetto al far plane.</li>
-        <li><strong>Pass principale:</strong> nel fragment shader della scena viene calcolato il vettore dalla luce al frammento. Il vettore viene usato per campionare la faccia corretta della cubemap e confrontare la profondità salvata con la distanza corrente.</li>
-        <li><strong>Bias:</strong> il confronto usa un piccolo bias per ridurre gli artefatti di self-shadowing dovuti a precisione numerica e discretizzazione della shadow map.</li>
+        <li><strong>Pass di shadow map:</strong> la geometria opaca viene renderizzata dalla posizione della luce 
+          per le sei direzioni della cubemap. Per ogni frammento viene memorizzata la distanza lineare dalla luce, 
+          normalizzata rispetto al far plane.</li>
+        <li><strong>Pass principale:</strong> nel fragment shader della scena viene calcolato il vettore dalla luce 
+          a livello di fragment. Il vettore viene usato per campionare la faccia corretta della cubemap e confrontare 
+          la profondità salvata con la distanza corrente.</li>
+        <li><strong>Bias:</strong> il confronto usa un piccolo bias per ridurre gli artefatti di self-shadowing 
+          dovuti a precisione numerica e discretizzazione della shadow map.</li>
       </ul>
       <p>
-        Quando un frammento risulta in ombra, la componente diretta della luce viene ridotta, mantenendo comunque la luce ambientale.
+        Quando un frammento risulta in ombra, la componente diretta della luce viene ridotta, mantenendo comunque 
+        la luce ambientale.
       </p>
 
       <h3>Gestione della trasparenza</h3>
@@ -234,21 +290,29 @@
         Il rendering è organizzato in due pass per gestire correttamente oggetti opachi e materiali trasparenti:
       </p>
       <ul>
-        <li><strong>Pass opaco:</strong> blending disattivato, depth test attivo e scrittura nel depth buffer abilitata. Vengono disegnati cappella, colonne, targa, corpo delle candele e stoppini.</li>
-        <li><strong>Pass trasparente:</strong> blending alpha attivato, depth test mantenuto attivo ma scrittura nel depth buffer disabilitata. Vengono disegnati fiamme, fumo, particelle di polvere e parti trasparenti della scenografia.</li>
+        <li><strong>Pass opaco:</strong> blending disattivato, depth test attivo e scrittura nel depth buffer abilitata. 
+          Vengono disegnati cappella, colonne, targa, corpo delle candele e stoppini.</li>
+        <li><strong>Pass trasparente:</strong> blending alpha attivato, depth test mantenuto attivo ma scrittura nel 
+          depth buffer disabilitata. Vengono disegnati fiamme, fumo, particelle di polvere e vetrate.</li>
       </ul>
       <p>
-        Questa separazione evita che gli elementi trasparenti blocchino impropriamente il disegno di altri elementi posti dietro di essi e consente di ottenere fiamme e fumo visivamente sovrapposti alla geometria solida.
+        Questa separazione evita che gli elementi trasparenti blocchino impropriamente il disegno di altri elementi 
+        posti dietro di essi e consente di ottenere fiamme e fumo visivamente sovrapposti alla geometria solida.
       </p>
     </section>
 
     <section>
       <h2>Interfaccia e controlli</h2>
       <p>
-        L'interazione è gestita sia su desktop sia su mobile. Su desktop la visuale è controllata con il mouse e il movimento con tastiera (WASD, frecce direzionali e Shift per la velocità). Su mobile gli eventi touch sono gestiti con Pointer Events, con un joystick virtuale nella metà sinistra dello schermo per il movimento e trascinamento nella metà destra per la visuale; l'HUD e il layout sono responsive.
+        L'interazione è gestita sia su desktop sia su mobile. Su desktop la visuale è controllata con il mouse e 
+        il movimento con tastiera (WASD, frecce direzionali e Shift per la velocità). Su mobile gli eventi touch 
+        sono gestiti con Pointer Events, con un joystick virtuale nella metà sinistra dello schermo per il movimento 
+        e trascinamento nella metà destra per la visuale; l'HUD e il layout sono responsive.
       </p>
       <p>
-        L'interfaccia contiene un HUD testuale che presenta i comandi disponibili, con contenuto diverso per desktop e mobile. È inoltre presente un pannello dat.GUI con controlli per modificare durante l'esecuzione parametri utili sia all'utente sia alla valutazione tecnica del progetto:
+        L'interfaccia contiene un HUD testuale che presenta i comandi disponibili, con contenuto diverso per desktop 
+        e mobile. È inoltre presente un pannello <code>dat.GUI</code> con controlli per modificare durante l'esecuzione 
+        parametri utili all'utente:
       </p>
       <ul>
         <li>yaw, pitch e altezza della camera;</li>
