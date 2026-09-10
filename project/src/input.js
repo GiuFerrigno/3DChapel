@@ -206,8 +206,7 @@ function initPointerControls(canvas) {
       return;
     }
 
-    const isLeftHalf =
-      event.clientX < window.innerWidth * 0.5;
+    const isLeftHalf = event.clientX < window.innerWidth * 0.5;
 
     if (isLeftHalf && movement.pointerId === null) {
       movement.pointerId = event.pointerId;
@@ -242,11 +241,7 @@ function initPointerControls(canvas) {
   canvas.addEventListener("pointermove", (event) => {
     const { mouse, look, movement } = pointerState;
 
-    if (
-      event.pointerType === "mouse" &&
-      mouse.active &&
-      event.pointerId === mouse.pointerId
-    ) {
+    if (event.pointerType === "mouse" && mouse.active && event.pointerId === mouse.pointerId) {
       updateCameraLook(
         event.clientX - mouse.lastX,
         event.clientY - mouse.lastY,

@@ -129,7 +129,7 @@ function getChapelUniforms(view, projection, cameraPosition, shadowData
 }
 
 /**
- * Disegna una parte della mesh della cappella usando il programma lit
+ * Disegna una parte della mesh della cappella
  */
 function drawChapelPart(part, commonUniforms) {
   if (!part?.bufferInfo || !part.texture) return;

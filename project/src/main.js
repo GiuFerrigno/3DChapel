@@ -193,14 +193,14 @@ function setupGUI() {
   gui = new dat.GUI();
 
   const cameraFolder = gui.addFolder("Camera");
-  cameraFolder.add(state, "cameraYaw", -Math.PI, Math.PI, 0.01).name("Yaw");
-  cameraFolder.add(state, "cameraPitch", -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05, 0.1).name("Pitch");
-  cameraFolder.add(state.cameraPosition, "1", 0.5, 3.0, 0.05).name("Eye height");
+  cameraFolder.add(state, "cameraYaw", -Math.PI, Math.PI, 0.01).name("Yaw").listen();
+  cameraFolder.add(state, "cameraPitch", -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05, 0.1).name("Pitch").listen();
+  cameraFolder.add(state.cameraPosition, "1", 0.5, 3.0, 0.05).name("Eye height").listen();
 
   const lightFolder = gui.addFolder("Point light");
-  lightFolder.add(state, "ambient", 0.0, 1.0, 0.01).name("Ambient");
-  lightFolder.add(state.candles.light, "baseIntensity", 0.0, 8.0, 0.01).name("Intensity");
-  lightFolder.add(state.candles.light, "radius", 0.5, 20.0, 0.1).name("Radius");
+  lightFolder.add(state, "ambient", 0.0, 1.0, 0.01).name("Ambient").listen();
+  lightFolder.add(state.candles.light, "baseIntensity", 0.0, 8.0, 0.01).name("Intensity").listen();
+  lightFolder.add(state.candles.light, "radius", 0.5, 20.0, 0.1).name("Radius").listen();
 
   const effectsFolder = gui.addFolder("Effects");
   effectsFolder.add(state.candles, "speed", 0.2, 3.0, 0.1).name("Speed");

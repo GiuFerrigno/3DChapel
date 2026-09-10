@@ -11,85 +11,6 @@ function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
-/**
- * Controlla se un numero è una potenza di 2
- */
-function isPowerOf2(value) {
-  return (value & (value - 1)) === 0;
-}
-
-/* =============================================================================
-   Texture: creazione e caricamento
-   ============================================================================= */
-
-/**
- * Crea una texture 1x1 a tinta unita
- */
-function createSolidTexture(gl, rgba) {
-  const tex = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGBA,
-    1,
-    1,
-    0,
-    gl.RGBA,
-    gl.UNSIGNED_BYTE,
-    new Uint8Array(rgba)
-  );
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-  return tex;
-}
-
-/**
- * Carica una texture da file e applica i parametri corretti in base alla dimensione
- * Se la texture è potenza di 2, genera i mipmap e usa filtraggio trilineare
- * altrimenti usa CLAMP_TO_EDGE e filtraggio lineare semplice
- */
-function loadTexture(gl, url) {
-  return new Promise((resolve, reject) => {
-    const tex = createSolidTexture(gl, [200, 200, 200, 255]);
-    const img = new Image();
-
-    img.onload = () => {
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.RGBA,
-        gl.RGBA,
-        gl.UNSIGNED_BYTE,
-        img
-      );
-
-      if (isPowerOf2(img.width) && isPowerOf2(img.height)) {
-        gl.generateMipmap(gl.TEXTURE_2D);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-      } else {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      }
-
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      resolve(tex);
-    };
-
-    img.onerror = () => reject(new Error("Texture non caricata: " + url));
-    img.src = url;
-  });
-}
-
 /* =============================================================================
    Camera: posizione, target, reset
    ============================================================================= */
@@ -108,6 +29,7 @@ function getCameraTarget() {
   const yaw = state.cameraYaw;
   const pitch = state.cameraPitch;
 
+  // Da coordinate sferiche a cartesiane 
   const direction = [
     Math.sin(yaw) * Math.cos(pitch),
     Math.sin(pitch),

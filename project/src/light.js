@@ -227,9 +227,12 @@ function drawSmokeUnlit(bufferInfo, world, view, projection, color) {
 
 function drawFlame(index, candlePosition, candleScale, view, projection) {
   const time = state.candles.time;
+  // Fase diversa per ogni candela 
   const phase = index * 1.7;
+  // Verticale
   const flicker = state.candles.flicker || 1.0;
   const pulse = flicker + 0.02 * Math.sin(time * 5.0 * state.candles.speed + phase);
+  // Orizzontale 
   const sway = 0.035 * Math.sin(time * 3.0 * state.candles.speed + phase);
 
   const candleTopY = candlePosition[1] + candleScale[1] * 0.5;
